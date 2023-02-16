@@ -1,0 +1,12 @@
+{
+    "version": "2.0",
+    "customHandler": {
+      "description": {
+        "methods": [ "HttpTrigger(AuthorizationLevel.Anonymous, \"GET\")" ],
+        "AuthLevel": "anonymous",
+        "defaultExecutablePath": "handler.exe",
+        "arguments": [ "--port", "%FUNCTIONS_CUSTOMHANDLER_PORT%" ],
+      },
+      "enableForwardingHttpRequest": true
+    }
+  }
