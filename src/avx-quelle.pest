@@ -40,8 +40,8 @@ or = { "|" }
 
 search = { ordered | segment+ }   // New nomenclature; searches have = 1 ordered-segments <xor> have >= 1 unordered-segments; segments are separated by OR ( | )
 
-segment = { fragment ~ (or ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= 1quoted/bracketed (unordered) fragments
-fragment = { feature ~ (and ~ feature)* } // Fragments have >= 1 features, separated by AND( & ) // A single token in a document must match all features to be deemed a full-match // partial-matches are not designed into the grammar
+segment = { fragment ~ (and ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= quoted/bracketed (unordered) fragments
+fragment = { feature ~ (or ~ feature)* } // Fragments have >= 1 features, separated by AND( & ) // A single token in a document must match all features to be deemed a full-match // partial-matches are not designed into the grammar
 
 ordered = { "\"" ~ (anchored ~ (unanchored | anchored)*) ~ "\"" } // Quoted/Ordered segment
 anchored = _{ (unordered | (fragment ~ (or ~ fragment)*)) }

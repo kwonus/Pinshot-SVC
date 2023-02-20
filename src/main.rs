@@ -30,8 +30,8 @@ async fn main() {
         // `GET /` goes to `root`
         .route("/", get(root))
         .route("/simple", get(get_parse_simple))
-        .route("/quelle", get(get_parse))
-        .route("/quelle_post", post(get_parse_via_post));
+ //     .route("/quelle-test", get(get_parse))
+        .route("/quelle", post(get_parse_via_post));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -57,58 +57,79 @@ struct Parsed {
 }
 
 #[derive(Deserialize)]
-struct QuelleInput {
-    username: String,
+struct QuelleStatement {
+    command: String,
 }
 
 #[derive(Serialize)]
 struct RootParse {
     input: String,
     result: Vec<Parsed>,
+    error: String,
 }
 
 async fn get_parse_simple() -> String {
     let input = "\"\\foo\\ ... [he \t said] ... /pronoun/&/3p/\" + bar + x|y&z a&b&c > xfile < genesis 1:1";
-    let input_string = input.to_string();
 
     let pairs = QuelleParser::parse(Rule::command, input).unwrap_or_else(|e| panic!("{}", e));
     pairs.to_string()
 }
-
+/*
 async fn get_parse() -> (StatusCode, Json<RootParse>) {
     let input = "\"\\foo\\ ... [he \t said] ... /pronoun/&/3p/\" + bar + x|y&z a&b&c > xfile < genesis 1:1";
     let input_string = input.to_string();
 
-    let pairs = QuelleParser::parse(Rule::command, input).unwrap_or_else(|e| panic!("{}", e));
-
     let mut result: Vec<Parsed> = vec![];
-    recurse(pairs, &mut result);
+    let mut message: String = "".to_string();
+    let task = QuelleParser::parse(Rule::command, input);
+
+    match task {
+        Ok(value)    => result = recurse(value, &mut result),
+        Err(error)   => message = error.to_string(),
+    }
 
     let root = RootParse {
         input: input_string,
         result: result,
+        error: message,
     };
     // this will be converted into a JSON response
     // with a status code of `201 Created`
     (StatusCode::CREATED, Json(root))
 }
+*/
+async fn get_parse_via_post(Json(payload): Json<QuelleStatement>) -> (StatusCode, Json<RootParse>) {
+    let input_string = payload.command.clone();
 
-async fn get_parse_via_post(Json(payload): Json<QuelleInput>) -> (StatusCode, Json<RootParse>) {
-    let input = "\"#foo ... [he \t said] ... /pronoun/&/3p/\" + bar + x|y&z a&b&c > xfile < genesis 1:1";
-    let input_string = input.to_string();
+    let mut top: Vec<Parsed> = vec![];
+    let task = QuelleParser::parse(Rule::command, &payload.command);
 
-    let pairs = QuelleParser::parse(Rule::command, input).unwrap_or_else(|e| panic!("{}", e));
-
-    let mut result: Vec<Parsed> = vec![];
-    recurse(pairs, &mut result);
-
-    let root = RootParse {
-        input: input_string,
-        result: result,
-    };
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(root))
+    if task.is_ok() {
+        let pairs = task.unwrap();
+        recurse(pairs, &mut top);
+        let root = RootParse {
+            input: input_string,
+            result: top,
+            error: "".to_string(),
+        };
+        (StatusCode::CREATED, Json(root))
+    }
+    else if task.is_err() {
+        let root = RootParse {
+            input: input_string,
+            result: top,
+            error: task.unwrap_err().to_string(),
+        };
+        (StatusCode::NOT_FOUND, Json(root))
+    }
+    else {
+        let root = RootParse {
+            input: input_string,
+            result: top,
+            error: "Internal Error".to_string(),
+        };
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(root))
+    }
 }
 
 fn recurse(children: Pairs<Rule>, items: &mut Vec<Parsed>)
