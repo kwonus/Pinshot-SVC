@@ -12,7 +12,7 @@
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 space = _ { " " | "\t" }
-command = { (clauses ~ save) | (clauses ~ scope ~ export) | (clauses ~ export ~ scope) | (clauses ~ export) | (clauses ~ scope) | clauses | explicit }
+statement = { (clauses ~ save) | (clauses ~ scope ~ export) | (clauses ~ export ~ scope) | (clauses ~ export) | (clauses ~ scope) | clauses | explicit }
 scope = { pick | filter }
 pick = { "<<[" ~ digit+ ~ ("," ~ digit+)* | "]" }
 cv = ${ chapter ~ ":" ~ verse }

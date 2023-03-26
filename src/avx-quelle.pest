@@ -11,45 +11,21 @@
 // fragments are used to match terms (i.e. word tokens) across the corpus being searched; match logic should consider all features of the fragment/token when deeming it to be matched
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
-space = _ { " " | "\t" }
-command = { (clauses ~ save) | (clauses ~ scope ~ export) | (clauses ~ export ~ scope) | (clauses ~ export) | (clauses ~ scope) | clauses | explicit }
-scope = { pick | filter }
-pick = { "<<[" ~ digit+ ~ ("," ~ digit+)* | "]" }
-cv = ${ chapter ~ ":" ~ verse }
-bcv = { (bookName | bookNum)}
-chapter = ${ digit+ }
-verse = ${ digit+ }
-bookName = ${ alpha+ | (onetwothree ~ space* ~ alpha+) }
-onetwothree = { ('1' .. '3') }
-bookNum  = ${ ('1' .. '9') | (('1' .. '5') ~ digit) ~ ( "6" ~ ('1' .. '6')) } // 1-66
-filter = ${ positive? ~ space* ~ "\\" ~ ((bookName ~ space+) | bookNum ~ ":") ~ "\\" }
-clauses = { clause ~ (polarity ~ clause)* }
-clause = { search | setting | named | previous }
-polarity = ${ negative | positive }
-negative = ${ ";"? ~ space+ ~ "--" ~ space* }
-positive = ${ "+" | ";" }   // extra positive delimiters are permitted in front of save, filter, output, and negative. This will allow user to always terminate clauses with semicolon [or plus]
-setting = { span | domain | exact /* | heading | annotation */ }
-label = { ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | " " | "-" | "_")+ }
-named = ${ space* ~ "{" ~ space* ~ label ~ space* ~ "}" ~ space*}   // macro is a Rust keyword; cannot use it here
-save = ${ positive? ~ space* ~ "<<" ~ space* ~ label}
-previous = { "{" ~ ('0' .. '9')+ ~ "}" }
-digit = _ { '0' .. '9' }
-alpha = _ { 'a' .. 'z' | 'A' .. 'Z' }
-and = { "&" }
-or = { "|" }
+statement = { singleton | vector | macro_vector }
 
-search = { ordered | segment+ }   // New nomenclature; searches have = 1 ordered-segments <xor> have >= 1 unordered-segments; segments are separated by OR ( | )
+vector = { (IMPLICIT+) ~ implicit_singletons? }
+macro_vector = { IMPLICIT+ ~ define_macro }
+singleton = { exit | help | history | expand | delete | version | get }
 
-segment = { fragment ~ (and ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= quoted/bracketed (unordered) fragments
-fragment = { feature ~ (or ~ feature)* } // Fragments have >= 1 features, separated by AND( & ) // A single token in a document must match all features to be deemed a full-match // partial-matches are not designed into the grammar
+IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
+implicit_singletons = { (print ~ export?) | (export ~ print?) }
+export = { (output | append | overwrite) }
+IMPLICIT_SEARCH = _{ negative? ~ search ~ DELIMITER* }
+IMPLICIT_OTHER = _{ DELIMITER* ~ (filter | setting | invoke | exec) }
+filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
-ordered = { "\"" ~ (anchored ~ (unanchored | anchored)*) ~ "\"" } // Quoted/Ordered segment
-anchored = _{ (unordered | (fragment ~ (or ~ fragment)*)) }
-unanchored = { ellipsis ~ anchored }
-unordered = { "[" ~ segment ~ segment* ~ "]" }
-
-feature = ${ space* ~ (text | pos | pn | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) ~ space* }
-text = { alpha+ }
+feature = { (text | pos | pn | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
+text = ${ ALPHA+ }
 pn = {  ^"/1p/" | ^"/2p/" | ^"/3p/" }
 pos_noun = { ^"/noun/" | ^"/n/" }
 not_noun = { ^"/!noun/" | ^"/!n/" }
@@ -110,60 +86,126 @@ punc = { punc_any | punc_question | punc_declare | punc_dash | punc_semi | punc_
 
 italics = { ^"/italics/" }
 jesus = { ^"/Jesus/" }
-decoration = { italics | jesus }
-pos32 = { "#" ~ digit ~ digit ~ digit ~ digit ~ digit+ }
-pn_pos12 = { "#" ~ digit ~ digit+ }
-greek = { digit ~ digit+ ~ ^":G" }
-hebrew = { digit ~ digit+ ~ ^":H" }
 
-lemma = { "\\" ~ text ~ "\\" }
-wildcard = { (alpha+ ~ "*" ~ alpha+) | ("*" ~ alpha+) | (alpha+ ~ "*" ) }
-limit_av = { (text ~ ^"#kjv") | (text ~ ^"#av") }
-limit_avx = { (text ~ ^"#mod") | (text ~ ^"#avx") }
-ellipsis = _{ "..." }
-
-explicit = { exit | help | history | expand | delete | version | get }
 exit = { ^"@exit" }
-help = { ^"@help" ~ topic | ^"@help" }
+help = { ^"@help" ~ topic? }
 history = {^"@history" }
-topic = ${ space* ~ text ~ space* }
-expand = { ^"@expand" ~ named* }
-delete = { ^"@delete" ~  named* }
+topic = { text }
+expand = { ^"@expand" ~ label }
+delete = { ^"@delete" ~  label }
 version = { ^"@version" }
 get = { ^"@get" ~ var }
-var = ${ space* ~ (spanKey | domainKey | exactKey | searchAll) ~space*}
-export = { positive? ~ (output | overwrite | append) }
-overwrite = ${ output ~ "!" ~space* }
-append = ${ ">>" ~  space* ~ filename ~space* }
-output = ${ ">" ~ space* ~ filename ~space* }
+var = { span_key | domain_key | exact_key | format_key | config }
 
-legal = _ { ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9') | "/" | "<" | "-" | "_" }
-filename = ${ space* ~ (("\"" ~ (legal+ | " ") + ~ "\"" ) | legal+) ~ space* }
+search = { ordered | segment+ }   // New nomenclature; searches have = 1 ordered-segments <xor> have >= 1 unordered-segments; segments are separated by OR ( | )
 
-span = { spanSet | spanDel }
-spanEq = { spanKey ~ "=" }
-spanDel = { spanEq ~ "@" }
-spanSet = { spanEq ~ digit+ }
-SPAN = { ^"span" }
-spanKey = { SPAN | (searchPrefix ~ SPAN) }
-searchPrefix =  { searchAll ~ "." }
-searchAll =  { ^"search" }
+segment = { fragment ~ (AND ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= quoted/bracketed (unordered) fragments
+fragment = { feature ~ (OR ~ feature)* } // Fragments have >= 1 features, separated by AND( & ) // A single token in a document must match all features to be deemed a full-match // partial-matches are not designed into the grammar
 
-domain = { domainSet | domainDel }
-domainEq = { domainKey ~ "=" }
-domainDel = { domainEq ~ "@" }
-domainSet = { domainEq ~ domains }
-DOMAIN = { ^"domain" }
-domainKey = { DOMAIN | (searchPrefix ~ DOMAIN) }
-domains = { av | avx }  // very specific domain for the AVX driver/parser implementation
-avx = { (("M"|"m")~("O"|"o")~("D"|"d")~("E"|"e")~("R"|"r")~("N"|"n")) | (("A"|"a") ~ ("V"|"v") ~ ("X"|"x")) }
-av = { (("K"|"k") ~ ("J"|"j") ~ ("V"|"v")) | (("A"|"a") ~ ("V"|"v")) | (("B"|"b") ~ ("I"|"i") ~ ("B"|"b") ~ ("L"|"l") ~ ("E"|"e")) }
+ordered = { QUOTE ~ (anchored ~ (unanchored | anchored)*) ~ QUOTE } // Quoted/Ordered segment
+anchored = { unordered | segment }
+unanchored = { ellipsis ~ (unordered | segment) }
+unordered = { "[" ~ segment ~ segment* ~ "]" }
 
-boolean = { (("T"|"t") ~ ("R"|"r") ~ ("U"|"u") ~ ("E"|"e")) | (("F"|"f") ~ ("A"|"a") ~ ("L"|"l") ~ ("S"|"s") ~ ("E"|"e")) | "0" | "1" }
+config = ${ ^"settings" }
+VAR = _{ "%" }
+default = ${ ^"default" }
+global_reset = { VAR ~ config ~ EQUALS ~ default }
+local_reset = { VAR ~ config ~ COLON ~ default }
 
-exact = { exactSet | exactDel }
-exactEq = { exactKey ~ "=" }
-exactDel = { exactEq ~ "@" }
-exactSet = { exactEq ~ boolean }
-EXACT = { ^"exact"}
-exactKey = { EXACT | (searchPrefix ~ EXACT) }
+span_key = @{ ^"span" }
+SPAN_VAR = _{ span_key }
+span_var = { VAR ~ SPAN_VAR ~ SETTING ~ span_option }
+span_set = { VAR ~ SPAN_VAR ~ EQUALS ~ span_option }
+span_option = { DIGIT_le3 | span_verse | default }
+span_verse = { ^"verse" }
+
+domain_key = @{ ^"domain" }
+DOMAIN_VAR = _{ domain_key }
+domain_var = { VAR ~ DOMAIN_VAR ~ SETTING ~ domain_option }
+domain_set = { VAR ~ DOMAIN_VAR ~ EQUALS ~ domain_option }
+domain_option = { DOMAINS | default }
+DOMAINS = _{ av | avx }  // very specific domain for the AVX driver/parser implementation
+avx = { ^"modern" | "^avx" }
+av = { ^"kjv" | ^"av" }
+
+exact_key = @{ ^"exact" }
+EXACT_VAR = _{ exact_key }
+exact_var = { VAR ~ EXACT_VAR ~ SETTING ~ exact_option }
+exact_set = { VAR ~ EXACT_VAR ~ EQUALS ~ exact_option }
+exact_option = { TRUE | FALSE | default }
+TRUE = { ^"true" | ^"yes" | "1" }
+FALSE = { ^"false" | ^"no" | "0" }
+
+format_key = @{ ^"format" }
+FORMAT_VAR = _{ format_key }
+format_var = { VAR ~ FORMAT_VAR ~ SETTING ~ format_option }
+format_set = { VAR ~ FORMAT_VAR ~ EQUALS ~ format_option }
+format_option = { html | markdown | textual | json | default }
+html = ${ ^"html" }
+markdown = ${ ^"markdown" | ^"md" }
+textual = ${ ^"text" }
+json = ${ ^"json" }
+
+print = { OPEN_BRACE ~ (DIGITS)* ~ CLOSE_BRACE }
+cv = { chapter ~ COLON ~ verse }
+book = { (bookName | bookNum)}
+verse = { chapter ~ COLON ~ DIGIT_byte }
+chapter = { COLON ~ DIGIT_byte }
+bookName = { ALPHA+ | (onetwothree ~ ALPHA+) }
+onetwothree = { ('1' .. '3') }
+bookNum  = ${ ('1' .. '9') | (('1' .. '5') ~ DIGIT) ~ ( "6" ~ ('1' .. '6')) } // 1-66
+negative = { "--" }
+setting = { span_var | span_set | domain_var | domain_set | exact_var | exact_set | format_var | format_set }
+define_macro = { "||" ~ label}
+label = { ('a' .. 'z' | 'A' .. 'Z') ~ (('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | "-" | "_")+)? }
+invoke = { DOLLAR ~ label }   // macro is a Rust keyword; cannot use it here
+exec = { DOLLAR ~ ('0' .. '9')+ }
+
+decoration = { italics | jesus }
+pos32 = ${ "#" ~ HEX32 }
+pn_pos12 = ${ "#" ~ HEX16 }
+greek = ${ DIGITS ~ ^":G" }
+hebrew = ${ DIGITS ~ ^":H" }
+
+lemma = { "\\" ~ text ~ "\\" }
+wildcard = ${ (text ~ "*" ~ text) | ("*" ~text) | (text ~ "*" ) }
+limit_av = { (text ~ ^"#kjv") | (text ~ ^"#av") }
+limit_avx = { (text ~ ^"#mod") | (text ~ ^"#avx") }
+ELLIPSIS = @{ "..." }
+ellipsis = _{ "..." }
+
+append = { ">>" ~ filename }
+output = { ">" ~ filename }
+overwrite = { "=>" ~ filename }
+
+FILESPEC = _{ ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9') | "/" | "\\" | "-" | "_" | ":" }
+quoted_filespec = ${ QUOTE ~ FILESPEC ~ (FILESPEC | " ") + ~ QUOTE }
+unquoted_legal = { FILESPEC+ }
+filename = { quoted_filespec | unquoted_legal }
+
+DIGIT = _{ '0' .. '9' }
+DIGITS = ${ DIGIT+ }
+DIGIT_ge5 = ${DIGIT ~ DIGIT ~ DIGIT ~ DIGIT ~ DIGIT+ }
+DIGIT_le2 = ${DIGIT ~ DIGIT? }
+DIGIT_le3 = ${DIGIT ~ DIGIT ~ DIGIT? }
+DIGIT_byte = ${ (("0" | "1" | "2") ~ DIGIT ~ DIGIT) | (DIGIT ~ DIGIT?) }
+HEX16 = ${ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F')? }
+HEX32 = ${ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F')? }
+ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
+AND = _{ "&" }
+OR = _{ "|" }
+DELIMITER = _{ "+" | ";" }
+EQUALS = _{ "=" }
+OPEN_BRACE = _{ "[" }
+CLOSE_BRACE = _{ "]" }
+DOLLAR = _{ "$" }
+FILTER_OP = _{ "<" }
+QUOTE = _{ "\"" }
+COLON = _{ ":" }
+SETTING = _{ "::" }
+SPACE = _{ " " }
+
+PAREN_OPEN = _{ "(" }
+PAREN_CLOSE = _{ "(" }
+
