@@ -58,7 +58,7 @@ struct Parsed {
 
 #[derive(Deserialize)]
 struct QuelleStatement {
-    command: String,
+    statement: String,
 }
 
 #[derive(Serialize)]
@@ -69,9 +69,10 @@ struct RootParse {
 }
 
 async fn get_parse_simple() -> String {
-    let input = "\"\\foo\\ ... [he \t said] ... /pronoun/&/3p/\" + bar + x|y&z a&b&c > xfile < genesis 1:1";
+    //let input = "\"\\foo\\ ... [he \t said] ... /pronoun/&/3p/\" + bar + x|y&z a&b&c > xfile < genesis 1:1";
+    let input = "@Help find";
 
-    let pairs = QuelleParser::parse(Rule::command, input).unwrap_or_else(|e| panic!("{}", e));
+    let pairs = QuelleParser::parse(Rule::statement, input).unwrap_or_else(|e| panic!("{}", e));
     pairs.to_string()
 }
 /*
@@ -99,10 +100,10 @@ async fn get_parse() -> (StatusCode, Json<RootParse>) {
 }
 */
 async fn get_parse_via_post(Json(payload): Json<QuelleStatement>) -> (StatusCode, Json<RootParse>) {
-    let input_string = payload.command.clone();
+    let input_string = payload.statement.clone();
 
     let mut top: Vec<Parsed> = vec![];
-    let task = QuelleParser::parse(Rule::command, &payload.command);
+    let task = QuelleParser::parse(Rule::statement, &payload.statement);
 
     if task.is_ok() {
         let pairs = task.unwrap();
@@ -137,10 +138,14 @@ fn recurse(children: Pairs<Rule>, items: &mut Vec<Parsed>)
     for pair in children {
         let mut result: Vec<Parsed> = vec![];
         let text = pair.as_str().to_string();
-        let rule = pair.to_string();
+        let mut rule = pair.to_string();
         // A non-terminal pair can be converted to an iterator of the tokens which make it up:
         recurse(pair.into_inner(), &mut result);
 
+        //let paren = rule.find('(').unwrap();
+        //if paren > 0 {
+            //rule = rule[0..paren].to_string();
+        //}
         let item = Parsed {
             rule: rule,
             text: text,
