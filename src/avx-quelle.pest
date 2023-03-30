@@ -24,7 +24,7 @@ IMPLICIT_SEARCH = _{ negative? ~ search ~ DELIMITER* }
 IMPLICIT_OTHER = _{ DELIMITER* ~ (filter | setting | invoke | exec) }
 filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
-feature = { (text | pos | pn | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
+feature = { (text | pos | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
 text = ${ ALPHA+ }
 pn = {  ^"/1p/" | ^"/2p/" | ^"/3p/" }
 pos_noun = { ^"/noun/" | ^"/n/" }
@@ -185,13 +185,14 @@ unquoted_legal = { FILESPEC+ }
 filename = { quoted_filespec | unquoted_legal }
 
 DIGIT = _{ '0' .. '9' }
+HEX = _{ DIGIT | ('a' .. 'f') | ('A' .. 'F') }
 DIGITS = ${ DIGIT+ }
 DIGIT_ge5 = ${DIGIT ~ DIGIT ~ DIGIT ~ DIGIT ~ DIGIT+ }
 DIGIT_le2 = ${DIGIT ~ DIGIT? }
 DIGIT_le3 = ${DIGIT ~ DIGIT ~ DIGIT? }
 DIGIT_byte = ${ (("0" | "1" | "2") ~ DIGIT ~ DIGIT) | (DIGIT ~ DIGIT?) }
-HEX16 = ${ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F')? }
-HEX32 = ${ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F') ~ (DIGIT | 'a' .. 'f' | 'A' .. 'F')? }
+HEX16 = ${ HEX ~ HEX? }
+HEX32 = ${ HEX ~ HEX ~ HEX ~ HEX? }
 ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
 AND = _{ "&" }
 OR = _{ "|" }
