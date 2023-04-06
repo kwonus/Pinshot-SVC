@@ -11,10 +11,10 @@
 // fragments are used to match terms (i.e. word tokens) across the corpus being searched; match logic should consider all features of the fragment/token when deeming it to be matched
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
-statement = { singleton | vector | macro_vector }
+statement = { singleton | macro_vector | vector }
 
-vector = { (IMPLICIT+) ~ implicit_singletons? }
 macro_vector = { IMPLICIT+ ~ define_macro }
+vector = { (IMPLICIT+) ~ implicit_singletons? }
 singleton = { exit | help | history | expand | delete | version | get }
 
 IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
@@ -26,26 +26,62 @@ filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
 feature = { (text | pos | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
 text = ${ ALPHA+ }
-pn = {  ^"/1p/" | ^"/2p/" | ^"/3p/" }
+pn = {  ^"/1p/" | ^"/2p/" | ^"/3p/" | "indefinite" }
 pos_noun = { ^"/noun/" | ^"/n/" }
 not_noun = { ^"/!noun/" | ^"/!n/" }
-pos_verb = { ^"/verb/" | ^"/n/" }
+pos_verb = { ^"/verb/" | ^"/v/" }
 not_verb = { ^"/!verb/" | ^"/!v/" }
-pos_pro = { ^"/pronoun/" | ^"/pn/" }
-not_pro = { ^"/!pronoun/" | ^"/!pn/" }
-pos_adj = { ^"/adjective/" | ^"/sdj/" }
+pos_adj = { ^"/adjective/" | ^"/adj/" }
 not_adj = { ^"/!adjective/" | ^"/!adj/" }
-pos_adv = { ^"/adjective/" | ^"/sdj/" }
-not_adv = { ^"/!adjective/" | ^"/!adj/" }
+pos_adv = { ^"/adverb/" | ^"/adv/" }
+not_adv = { ^"/!adverb/" | ^"/!adv/" }
 pos_det = { ^"/determiner/" | ^"/det/" }
 not_det = { ^"/!determiner/" | ^"/!det/" }
-pos_art = { ^"/article/" | ^"/art/" }
-not_art = { ^"/!article/" | ^"/!art/" }
+pos_art = { ^"/particle/" | ^"/part/" }
+not_art = { ^"/!particle/" | ^"/!part/" }
+
+pos_most = { pos_noun | not_noun | pos_verb | not_verb | pos_adj | not_adj | pos_adv | not_adv | pos_det | not_det | pos_art | not_art }
+
+pos_pro = { ^"/pronoun/" | ^"/pn/" }
+not_pro = { ^"/!pronoun/" | ^"/!pn/" }
+
+pos_pro_neuter = { ^"/pn_neuter/" }
+pos_pro_masculine = { ^"/pn_masculine/" | ^"/pn_male/" }
+pos_pro_feminine = { ^"/pn_feminine/" | ^"/pn_fem/" }
+
+not_pro_neuter    = { ^"/!pn_neuter/" }
+not_pro_masculine = { ^"/!pn_masculine/" | ^"/!pn_male/" }
+not_pro_feninine  = { ^"/!pn_feninine/"  | ^"/!pn_fem/"  }
+
+pos_pro_genitive   = { ^"/pn_genitive/"   | ^"/pn_gen/" }
+pos_pro_nominative = { ^"/pn_nominative/" | ^"/pn_nom/" }
+pos_pro_objective  = { ^"/pn_objective/"  | ^"/pn_obj/" }
+pos_pro_reflexive  = { ^"/pn_reflexive/"  | ^"/pn_rfx/" }
+
+not_pro_genitive   = { ^"/!pn_genitive/"   | ^"/!pn_gen/" }
+not_pro_nominative = { ^"/!pn_nominative/" | ^"/!pn_nom/" }
+not_pro_objective  = { ^"/!pn_objective/"  | ^"/!pn_obj/" }
+not_pro_reflexive  = { ^"/!pn_reflexive/"  | ^"/!pn_rfx/" }
+
+pos_pro_all = { pos_pro | not_pro | pos_pro_neuter| pos_pro_masculine | pos_pro_feminine | not_pro_neuter | not_pro_masculine | not_pro_feninine | pos_pro_genitive | pos_pro_nominative | pos_pro_objective | pos_pro_reflexive | not_pro_genitive | not_pro_nominative | not_pro_objective | not_pro_reflexive }
+
+pos_prep = { ^"/preposition/" | ^"/prep/" }
+pos_inter = { ^"/interjection/" | ^"/inter/" }
+pos_conj = { ^"/conjunction/" | ^"/conj/" }
+pos_num = { ^"/numeric/" | ^"/num/" }
+
+not_prep = { ^"/!preposition/" | ^"/!prep/" }
+not_inter = { ^"/!interjection/" | ^"/!inter/" }
+not_conj = { ^"/!conjunction/" | ^"/!conj/" }
+not_num =  { ^"/!numeric/" | ^"/!num/" }
+
+pos_more = { pos_prep | pos_inter | pos_conj | pos_num | not_prep | not_inter | not_conj | not_num  }
+
 pos_wh = { ^"/wh/" }
 not_wh = { ^"/!wh/" }
 singular = { ^"/singular/" }
 plural = { ^"/pural/" }
-pos = { pos_noun | not_noun | pos_verb | not_verb | pos_pro | not_pro | pos_adj | not_adj | pos_adv | not_adv | pos_det | not_det | pos_art | not_art | pos_wh | not_wh | singular | plural | pn }
+pos = { pos_most | pos_more | pos_pro_all | pos_wh | not_wh | singular | plural | pn }
 
 loc_bob = { ^"/BoB/" }
 loc_eob = { ^"/EoB/" }
