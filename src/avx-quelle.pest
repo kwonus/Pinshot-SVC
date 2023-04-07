@@ -13,7 +13,7 @@
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { singleton | macro_vector | vector }
 
-macro_vector = { IMPLICIT+ ~ define_macro }
+macro_vector = { IMPLICIT+ ~ apply }
 vector = { (IMPLICIT+) ~ implicit_singletons? }
 singleton = { exit | help | history | expand | delete | version | get }
 
@@ -21,7 +21,7 @@ IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
 implicit_singletons = { (print ~ export?) | (export ~ print?) }
 export = { (output | append | overwrite) }
 IMPLICIT_SEARCH = _{ negative? ~ search ~ DELIMITER* }
-IMPLICIT_OTHER = _{ DELIMITER* ~ (filter | setting | invoke | exec) }
+IMPLICIT_OTHER = _{ DELIMITER* ~ (filter | setting | utilize | invoke) }
 filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
 feature = { (text | pos | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
@@ -193,10 +193,10 @@ onetwothree = { ('1' .. '3') }
 bookNum  = ${ ('1' .. '9') | (('1' .. '5') ~ DIGIT) ~ ( "6" ~ ('1' .. '6')) } // 1-66
 negative = { "--" }
 setting = { span_var | span_set | domain_var | domain_set | exact_var | exact_set | format_var | format_set }
-define_macro = { "||" ~ label}
+apply = { "||" ~ label}
 label = { ('a' .. 'z' | 'A' .. 'Z') ~ (('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | "-" | "_")+)? }
-invoke = { DOLLAR ~ label }   // macro is a Rust keyword; cannot use it here
-exec = { DOLLAR ~ ('0' .. '9')+ }
+utilize = ${ DOLLAR ~ label }   // macro is a Rust keyword; cannot use it here
+invoke = ${ DOLLAR ~ ('0' .. '9')+ }
 
 decoration = { italics | jesus }
 pos32 = ${ "#" ~ HEX32 }
