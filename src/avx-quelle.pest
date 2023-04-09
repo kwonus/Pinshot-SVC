@@ -20,8 +20,8 @@ singleton = { exit | help | history | expand | delete | version | get }
 IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
 implicit_singletons = { (print ~ export?) | (export ~ print?) }
 export = { (output | append | overwrite) }
-IMPLICIT_SEARCH = _{ negative? ~ search ~ DELIMITER* }
-IMPLICIT_OTHER = _{ DELIMITER* ~ (filter | setting | utilize | invoke) }
+IMPLICIT_SEARCH = _{ DELIMITER? ~  negative? ~ search }
+IMPLICIT_OTHER = _{ filter | setting | utilize | invoke }
 filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
 feature = { (text | pos | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
@@ -133,15 +133,14 @@ version = { ^"@version" }
 get = { ^"@get" ~ var }
 var = { span_key | domain_key | exact_key | format_key | config }
 
-search = { ordered | segment+ }   // New nomenclature; searches have = 1 ordered-segments <xor> have >= 1 unordered-segments; segments are separated by OR ( | )
+search = { ordered | unordered }   // quoted-searches are ordered // unquoted-searches are unordered
 
-segment = { fragment ~ (AND ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= quoted/bracketed (unordered) fragments
+segment = { fragment ~ (AND ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= quoted (ordered) fragments
 fragment = { feature ~ (OR ~ feature)* } // Fragments have >= 1 features, separated by AND( & ) // A single token in a document must match all features to be deemed a full-match // partial-matches are not designed into the grammar
 
-ordered = { QUOTE ~ (anchored ~ (unanchored | anchored)*) ~ QUOTE } // Quoted/Ordered segment
-anchored = { unordered | segment }
-unanchored = { ellipsis ~ (unordered | segment) }
-unordered = { "[" ~ segment ~ segment* ~ "]" }
+ordered = { QUOTE ~ (segment ~ (unanchored | segment)*) ~ QUOTE } // Quoted/Ordered segment
+unanchored = { ellipsis ~ segment }
+unordered = { segment+ }
 
 config = ${ ^"settings" }
 VAR = _{ "%" }
@@ -242,7 +241,4 @@ QUOTE = _{ "\"" }
 COLON = _{ ":" }
 SETTING = _{ "::" }
 SPACE = _{ " " }
-
-PAREN_OPEN = _{ "(" }
-PAREN_CLOSE = _{ "(" }
 
