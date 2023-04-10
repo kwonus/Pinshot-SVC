@@ -145,8 +145,10 @@ unordered = { segment+ }
 config = ${ ^"settings" }
 VAR = _{ "%" }
 default = ${ ^"default" }
+current = ${ ^"current" }
 global_reset = { VAR ~ config ~ EQUALS ~ default }
-local_reset = { VAR ~ config ~ COLON ~ default }
+local_reset = { (VAR ~ config ~ COLON ~ default) | (VAR ~ default) }
+local_current = { (VAR ~ config ~ COLON ~ current) | (VAR ~ current) }
 
 span_key = @{ ^"span" }
 SPAN_VAR = _{ span_key }
