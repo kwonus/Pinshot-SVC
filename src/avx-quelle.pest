@@ -13,9 +13,10 @@
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { singleton | macro_vector | vector }
 
+macro_settings = { utilize ~ SETTING ~ control_suffix }
 macro_vector = { IMPLICIT+ ~ apply }
 vector = { (IMPLICIT+) ~ implicit_singletons? }
-singleton = { exit | help | history | expand | delete | version | get }
+singleton = { exit | help | history | expand | delete | version | get | reset | initialize }
 
 IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
 implicit_singletons = { (print ~ export?) | (export ~ print?) }
@@ -25,7 +26,6 @@ IMPLICIT_OTHER = _{ filter | setting | utilize | invoke }
 filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
 feature = { (text | pos | pn_pos12 | pos32 | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration) }
-text = ${ ALPHA+ }
 pn = {  ^"/1p/" | ^"/2p/" | ^"/3p/" | "indefinite" }
 pos_noun = { ^"/noun/" | ^"/n/" }
 not_noun = { ^"/!noun/" | ^"/!n/" }
@@ -123,15 +123,18 @@ punc = { punc_any | punc_question | punc_declare | punc_dash | punc_semi | punc_
 italics = { ^"/italics/" }
 jesus = { ^"/Jesus/" }
 
-exit = { ^"@exit" }
-help = { ^"@help" ~ topic? }
-history = {^"@history" }
-topic = { text }
-expand = { ^"@expand" ~ label }
-delete = { ^"@delete" ~  label }
-version = { ^"@version" }
-get = { ^"@get" ~ var }
-var = { span_key | domain_key | exact_key | format_key | config }
+exit = { SINGLETON ~ ^"exit" }
+help = { SINGLETON ~ ^"help" ~ topic? }
+history = { SINGLETON ~ ^"history" }
+//topic = { (HASHTAG | SINGLETON)? ~ text } // Vanilla-Quelle ?
+topic = ${ (HASHTAG | SINGLETON)? ~ (doc_system | doc_macro | doc_history | doc_control | doc_output | doc_search) }
+expand = ${ SINGLETON ~ ^"expand" ~ label }
+delete = ${ SINGLETON ~ ^"delete" ~  label }
+version = { SINGLETON ~ ^"version" }
+reset = { SINGLETON ~ ^"reset" }
+initialize = { SINGLETON ~ ^"initialize" ~ ^"history" }
+get = { SINGLETON ~ ^"get" ~ var }
+var = { span_key | domain_key | exact_key | format_key }
 
 search = { ordered | unordered }   // quoted-searches are ordered // unquoted-searches are unordered
 
@@ -142,14 +145,7 @@ ordered = { QUOTE ~ (segment ~ (unanchored | segment)*) ~ QUOTE } // Quoted/Orde
 unanchored = { ellipsis ~ segment }
 unordered = { segment+ }
 
-config = ${ ^"settings" }
-VAR = _{ "%" }
-default = ${ ^"default" }
-current = ${ ^"current" }
-global_reset = { VAR ~ config ~ EQUALS ~ default }
-local_reset = { (VAR ~ config ~ COLON ~ default) | (VAR ~ default) }
-local_current = { (VAR ~ config ~ COLON ~ current) | (VAR ~ current) }
-
+control_suffix = { defaults | current | absorb }     // seems to be bug in pest crate iff this is named "settings_option" instead of "control_suffix"
 span_key = @{ ^"span" }
 SPAN_VAR = _{ span_key }
 span_var = { VAR ~ SPAN_VAR ~ SETTING ~ span_option }
@@ -243,4 +239,45 @@ QUOTE = _{ "\"" }
 COLON = _{ ":" }
 SETTING = _{ "::" }
 SPACE = _{ " " }
+VAR = _{ "%" }
+SINGLETON = _{ "@" }
+HASHTAG = _{ "@" }
+defaults = ${ ^"defaults" }
+default = ${ ^"default" }
+current = ${ ^"current" }
+absorb = ${ ^"absorb" }
+
+TOPIC_HELP = @{ ^"HELP" }
+TOPIC_EXIT = @{ ^"EXIT" }
+TOPIC_VERSION = @{ ^"VERSION" }
+TOPIC_DELETE = @{ ^"DELETE" }
+TOPIC_EXPAND = @{ ^"EXPAND" }
+TOPIC_REVIEW = @{ ^"REVIEW" }
+TOPIC_GET = @{ ^"GET" }
+TOPIC_SHOW = @{ ^"SHOW" }
+TOPIC_EXPORT = @{ ^"EXPORT" }
+TOPIC_INVOKE = @{ ^"INVOKE" }
+TOPIC_FILTER = @{ ^"FILTER" }
+TOPIC_FIND = @{ ^"FIND" }
+TOPIC_UTILIZE = @{ ^"UTILIZE" }
+TOPIC_APPLY = @{ ^"APPLY" }
+TOPIC_SET = @{ ^"SET" }
+TOPIC_CLEAR = @{ ^"CLEAR" }
+TOPIC_SEARCH = @{ ^"SEARCH" }
+TOPIC_CONTROL = @{ ^"CONTROL" }
+TOPIC_SETTINGS = @{ ^"SETTINGS" }
+TOPIC_MACRO = @{ ^"MACRO" }
+TOPIC_HISTORY = @{ ^"HISTORY" }
+TOPIC_LABEL = @{ ^"LABEL" }
+TOPIC_OUTPUT = @{ ^"OUTPUT" }
+TOPIC_SYSTEM = @{ ^"SYSTEM" }
+
+doc_system = { TOPIC_HELP | TOPIC_EXIT | TOPIC_VERSION | TOPIC_SYSTEM }
+doc_macro = { TOPIC_DELETE | TOPIC_EXPAND | TOPIC_UTILIZE | TOPIC_APPLY | TOPIC_MACRO | TOPIC_LABEL }
+doc_history = { TOPIC_REVIEW | TOPIC_INVOKE | TOPIC_HISTORY }
+doc_control = { TOPIC_GET | TOPIC_SET | TOPIC_CLEAR | TOPIC_CONTROL | TOPIC_SETTINGS }
+doc_output = { TOPIC_SHOW  | TOPIC_EXPORT | TOPIC_OUTPUT }
+doc_search = { TOPIC_FILTER | TOPIC_FIND | TOPIC_SEARCH }
+
+text = ${ ALPHA+ }
 
