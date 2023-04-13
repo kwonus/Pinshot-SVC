@@ -203,8 +203,6 @@ hebrew = ${ DIGITS ~ ^":H" }
 
 lemma = { "\\" ~ text ~ "\\" }
 wildcard = ${ (text ~ "*" ~ text) | ("*" ~text) | (text ~ "*" ) }
-limit_av = { (text ~ ^"#kjv") | (text ~ ^"#av") }
-limit_avx = { (text ~ ^"#mod") | (text ~ ^"#avx") }
 ELLIPSIS = @{ "..." }
 ellipsis = _{ "..." }
 

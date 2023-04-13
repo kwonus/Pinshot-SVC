@@ -69,8 +69,7 @@ struct RootParse {
 }
 
 async fn get_parse_simple() -> String {
-    //let input = "\"\\foo\\ ... [he \t said] ... /pronoun/&/3p/\" + bar + x|y&z a&b&c > xfile < genesis 1:1";
-    let input = "@Help find";
+    let input ="$goodness %current";
 
     let pairs = QuelleParser::parse(Rule::statement, input).unwrap_or_else(|e| panic!("{}", e));
     pairs.to_string()
