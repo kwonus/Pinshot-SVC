@@ -13,78 +13,55 @@
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { singleton | macro_vector | vector }
 
-macro_settings = { utilize ~ SETTING ~ control_suffix }
+macro_settings = { utilize ~ (SETTING ~ control_suffix)? }
 macro_vector = { IMPLICIT+ ~ apply }
 vector = { (IMPLICIT+) ~ implicit_singletons? }
-singleton = { exit | help | history | expand | delete | version | get | reset | initialize }
+singleton = { exit | help | history | expand | delete | absorb | version | get | reset | initialize }
 
 IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
 implicit_singletons = { (print ~ export?) | (export ~ print?) }
 export = { (output | append | overwrite) }
-IMPLICIT_SEARCH = _{ DELIMITER? ~  negative? ~ search }
+IMPLICIT_SEARCH = _{ DELIMITER? ~ search }
 IMPLICIT_OTHER = _{ filter | setting | utilize | invoke }
 filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
 
-feature = { (text | pos | pn_pos12 | pos32 | nupos | nupos_not | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration | delta | not_delta ) }
+feature = { (text | pos | pn_pos12 | pos32 | nupos | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration | delta ) }
 delta = { ^"/delta/" }
-not_delta = { ^"/!delta/" }
 
-pn = { ^"/1p/" | ^"/2p/" | ^"/3p/" | "indefinite" }
+pn = { ^"/1p/" | ^"/2p/" | ^"/3p/" | "/indefinite/" }
 pos_noun = { ^"/noun/" | ^"/n/" }
-not_noun = { ^"/!noun/" | ^"/!n/" }
 pos_verb = { ^"/verb/" | ^"/v/" }
-not_verb = { ^"/!verb/" | ^"/!v/" }
 pos_adj = { ^"/adjective/" | ^"/adj/" }
-not_adj = { ^"/!adjective/" | ^"/!adj/" }
 pos_adv = { ^"/adverb/" | ^"/adv/" }
-not_adv = { ^"/!adverb/" | ^"/!adv/" }
 pos_det = { ^"/determiner/" | ^"/det/" }
-not_det = { ^"/!determiner/" | ^"/!det/" }
 pos_art = { ^"/particle/" | ^"/part/" }
-not_art = { ^"/!particle/" | ^"/!part/" }
 
-pos_most = { pos_noun | not_noun | pos_verb | not_verb | pos_adj | not_adj | pos_adv | not_adv | pos_det | not_det | pos_art | not_art }
+pos_most = { pos_noun | pos_verb | pos_adj | pos_adv | pos_det | pos_art }
 
 pos_pro = { ^"/pronoun/" | ^"/pn/" }
-not_pro = { ^"/!pronoun/" | ^"/!pn/" }
 
 pos_pro_neuter = { ^"/pn_neuter/" }
 pos_pro_masculine = { ^"/pn_masculine/" | ^"/pn_male/" }
 pos_pro_feminine = { ^"/pn_feminine/" | ^"/pn_fem/" }
-
-not_pro_neuter    = { ^"/!pn_neuter/" }
-not_pro_masculine = { ^"/!pn_masculine/" | ^"/!pn_male/" }
-not_pro_feninine  = { ^"/!pn_feninine/"  | ^"/!pn_fem/"  }
 
 pos_pro_genitive   = { ^"/pn_genitive/"   | ^"/pn_gen/" }
 pos_pro_nominative = { ^"/pn_nominative/" | ^"/pn_nom/" }
 pos_pro_objective  = { ^"/pn_objective/"  | ^"/pn_obj/" }
 pos_pro_reflexive  = { ^"/pn_reflexive/"  | ^"/pn_rfx/" }
 
-not_pro_genitive   = { ^"/!pn_genitive/"   | ^"/!pn_gen/" }
-not_pro_nominative = { ^"/!pn_nominative/" | ^"/!pn_nom/" }
-not_pro_objective  = { ^"/!pn_objective/"  | ^"/!pn_obj/" }
-not_pro_reflexive  = { ^"/!pn_reflexive/"  | ^"/!pn_rfx/" }
-
-pos_pro_all = { pos_pro | not_pro | pos_pro_neuter| pos_pro_masculine | pos_pro_feminine | not_pro_neuter | not_pro_masculine | not_pro_feninine | pos_pro_genitive | pos_pro_nominative | pos_pro_objective | pos_pro_reflexive | not_pro_genitive | not_pro_nominative | not_pro_objective | not_pro_reflexive }
+pos_pro_all = { pos_pro | pos_pro_neuter| pos_pro_masculine | pos_pro_feminine | pos_pro_genitive | pos_pro_nominative | pos_pro_objective | pos_pro_reflexive }
 
 pos_prep = { ^"/preposition/" | ^"/prep/" }
 pos_inter = { ^"/interjection/" | ^"/inter/" }
 pos_conj = { ^"/conjunction/" | ^"/conj/" }
 pos_num = { ^"/numeric/" | ^"/num/" }
 
-not_prep = { ^"/!preposition/" | ^"/!prep/" }
-not_inter = { ^"/!interjection/" | ^"/!inter/" }
-not_conj = { ^"/!conjunction/" | ^"/!conj/" }
-not_num =  { ^"/!numeric/" | ^"/!num/" }
-
-pos_more = { pos_prep | pos_inter | pos_conj | pos_num | not_prep | not_inter | not_conj | not_num  }
+pos_more = { pos_prep | pos_inter | pos_conj | pos_num }
 
 pos_wh = { ^"/wh/" }
-not_wh = { ^"/!wh/" }
 singular = { ^"/singular/" }
 plural = { ^"/pural/" }
-pos = { pos_most | pos_more | pos_pro_all | pos_wh | not_wh | singular | plural | pn }
+pos = { pos_most | pos_more | pos_pro_all | pos_wh | singular | plural | pn }
 
 loc_bob = { ^"/BoB/" }
 loc_eob = { ^"/EoB/" }
@@ -92,23 +69,13 @@ loc_boc = { ^"/BoC/" }
 loc_eoc = { ^"/EoC/" }
 loc_bov = { ^"/BoV/" }
 loc_eov = { ^"/EoV/" }
-not_bob = { ^"/!BoB/" }
-not_eob = { ^"/!EoB/" }
-not_boc = { ^"/!BoC/" }
-not_eoc = { ^"/!EoC/" }
-not_bov = { ^"/!BoV/" }
-not_eov = { ^"/!EoV/" }
-loc = { loc_bob | loc_eob | loc_boc | loc_eoc | loc_bov | loc_eov | not_bob | not_eob | not_boc | not_eoc | not_bov | not_eov }
+loc = { loc_bob | loc_eob | loc_boc | loc_eoc | loc_bov | loc_eov }
 
 seg_hsm = { ^"/Hsm/"  }
 seg_csm = { ^"/Csm/"  }
 seg_ssm = { ^"/Ssm/"  }
 seg_any = { ^"/sm/"   }
-not_hsm = { ^"/!Hsm/" }
-not_csm = { ^"/!Csm/" }
-not_ssm = { ^"/!Ssm/" }
-not_any = { ^"/!sm/"  }
-seg = { seg_hsm | seg_csm | seg_ssm | seg_any | not_hsm | not_csm | not_ssm | not_any }
+seg = { seg_hsm | seg_csm | seg_ssm | seg_any }
 
 punc_any      = { "/_/" }
 punc_exclaim  = { "/!/" }
@@ -133,11 +100,12 @@ history = { SINGLETON ~ ^"history" }
 topic = ${ (HASHTAG | SINGLETON)? ~ (doc_system | doc_macro | doc_history | doc_control | doc_output | doc_search) }
 expand = ${ SINGLETON ~ ^"expand" ~ label }
 delete = ${ SINGLETON ~ ^"delete" ~  label }
+absorb = ${ SINGLETON ~ ^"absorb" ~ label }
 version = { SINGLETON ~ ^"version" }
 reset = { SINGLETON ~ ^"reset" }
 initialize = { SINGLETON ~ ^"initialize" ~ ^"history" }
 get = { SINGLETON ~ ^"get" ~ var }
-var = { span_key | lexicon_key | exact_key | format_key }
+var = { span_key | lexicon_key | display_key | threshold_keys | format_key }
 
 search = { ordered | unordered }   // quoted-searches are ordered // unquoted-searches are unordered
 
@@ -148,7 +116,7 @@ ordered = { QUOTE ~ (segment ~ (unanchored | segment)*) ~ QUOTE } // Quoted/Orde
 unanchored = { ellipsis ~ segment }
 unordered = { segment+ }
 
-control_suffix = { defaults | current | absorb }     // seems to be bug in pest crate iff this is named "settings_option" instead of "control_suffix"
+control_suffix = { current }     // seems to be bug in pest crate iff this is named "settings_option" instead of "control_suffix"
 span_key = @{ ^"span" }
 SPAN_VAR = _{ span_key }
 span_var = { VAR ~ SPAN_VAR ~ SETTING ~ span_option }
@@ -161,17 +129,28 @@ LEXICON_VAR = _{ lexicon_key }
 lexicon_var = { VAR ~ LEXICON_VAR ~ SETTING ~ lexicon_option }
 lexicon_set = { VAR ~ LEXICON_VAR ~ EQUALS ~ lexicon_option }
 lexicon_option = { LEXICONS | default }
-LEXICONS = _{ av | avx }  // very specific domain for the AVX driver/parser implementation
+LEXICONS = _{ av | avx | dual }  // very specific domain for the AVX driver/parser implementation
 avx = { ^"modern" | "^avx" }
 av = { ^"kjv" | ^"av" }
+dual = { ^"dual" | ^"both" }
 
-exact_key = @{ ^"exact" }
-EXACT_VAR = _{ exact_key }
-exact_var = { VAR ~ EXACT_VAR ~ SETTING ~ exact_option }
-exact_set = { VAR ~ EXACT_VAR ~ EQUALS ~ exact_option }
-exact_option = { TRUE | FALSE | default }
-TRUE = { ^"true" | ^"yes" | "1" }
-FALSE = { ^"false" | ^"no" | "0" }
+display_key = @{ ^"display" }
+DISPLAY_VAR = _{ display_key }
+display_var = { VAR ~ DISPLAY_VAR ~ SETTING ~ display_option }
+display_set = { VAR ~ DISPLAY_VAR ~ EQUALS ~ display_option }
+display_option = { DISPLAYS | default }
+DISPLAYS = _{ av | avx }  // very specific domain for the AVX driver/parser implementation
+
+threshold_keys = ${ threshold_phonics_key | threshold_text_key }
+threshold_phonics_key = @{ ^"threshold.phonics" }
+threshold_text_key = @{ ^"threshold.text" }
+MATCH_VAR = _{ threshold_keys }
+match_var = { VAR ~ MATCH_VAR ~ SETTING ~ match_options }
+match_set = { VAR ~ MATCH_VAR ~ EQUALS ~ match_options }
+match_options = { FUZZY | EXACT | NONE }
+EXACT = ${ ^"exact" ~ "100" }
+NONE = ${ ^"none" ~ "0" }
+FUZZY = ${ ( (('1' .. '9') ~ ('0' .. '9')) | ('1' .. '9') )  } // legal thresholds are from 1 to 99 (100% is excluded because that would represent an exact-match
 
 format_key = @{ ^"format" }
 FORMAT_VAR = _{ format_key }
@@ -191,8 +170,8 @@ chapter = { COLON ~ DIGIT_byte }
 bookName = { ALPHA+ | (onetwothree ~ ALPHA+) }
 onetwothree = { ('1' .. '3') }
 bookNum  = ${ ('1' .. '9') | (('1' .. '5') ~ DIGIT) ~ ( "6" ~ ('1' .. '6')) } // 1-66
-negative = { "--" }
-setting = { span_var | span_set | lexicon_var | lexicon_set | exact_var | exact_set | format_var | format_set }
+negate = { "-:" }
+setting = { span_var | span_set | lexicon_var | lexicon_set | display_var | display_set | match_var | match_set | format_var | format_set }
 apply = { "||" ~ label}
 label = { ('a' .. 'z' | 'A' .. 'Z') ~ (('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | "-" | "_")+)? }
 utilize = ${ DOLLAR ~ label }   // macro is a Rust keyword; cannot use it here
@@ -243,16 +222,15 @@ SPACE = _{ " " }
 VAR = _{ "%" }
 SINGLETON = _{ "@" }
 HASHTAG = _{ "@" }
-defaults = ${ ^"defaults" }
 default = ${ ^"default" }
 current = ${ ^"current" }
-absorb = ${ ^"absorb" }
 
 TOPIC_HELP = @{ ^"HELP" }
 TOPIC_EXIT = @{ ^"EXIT" }
 TOPIC_VERSION = @{ ^"VERSION" }
 TOPIC_DELETE = @{ ^"DELETE" }
 TOPIC_EXPAND = @{ ^"EXPAND" }
+TOPIC_ABSORB = @{ ^"ABSORB" }
 TOPIC_REVIEW = @{ ^"REVIEW" }
 TOPIC_GET = @{ ^"GET" }
 TOPIC_SHOW = @{ ^"SHOW" }
@@ -274,7 +252,7 @@ TOPIC_OUTPUT = @{ ^"OUTPUT" }
 TOPIC_SYSTEM = @{ ^"SYSTEM" }
 
 doc_system = { TOPIC_HELP | TOPIC_EXIT | TOPIC_VERSION | TOPIC_SYSTEM }
-doc_macro = { TOPIC_DELETE | TOPIC_EXPAND | TOPIC_UTILIZE | TOPIC_APPLY | TOPIC_MACRO | TOPIC_LABEL }
+doc_macro = { TOPIC_DELETE | TOPIC_EXPAND | TOPIC_ABSORB | TOPIC_UTILIZE | TOPIC_APPLY | TOPIC_MACRO | TOPIC_LABEL }
 doc_history = { TOPIC_REVIEW | TOPIC_INVOKE | TOPIC_HISTORY }
 doc_control = { TOPIC_GET | TOPIC_SET | TOPIC_CLEAR | TOPIC_CONTROL | TOPIC_SETTINGS }
 doc_output = { TOPIC_SHOW  | TOPIC_EXPORT | TOPIC_OUTPUT }
@@ -522,249 +500,6 @@ nupos = {
 	^"#vvzx" |
 	^"#xx" |
 	^"#zz" }
-
-nupos_not = {
-	^"#!a-acp" |
-	^"#!av" |
-	^"#!av-an" |
-	^"#!av-c" |
-	^"#!avc-jn" |
-	^"#!av-d" |
-	^"#!av-dc" |
-	^"#!av-ds" |
-	^"#!av-dx" |
-	^"#!av-j" |
-	^"#!av-jc" |
-	^"#!av-jn" |
-	^"#!av-js" |
-	^"#!av-n1" |
-	^"#!av-s" |
-	^"#!avs-jn" |
-	^"#!av-vvg" |
-	^"#!av-vvn" |
-	^"#!av-x" |
-	^"#!c-acp" |
-	^"#!cc" |
-	^"#!cc-acp" |
-	^"#!c-crq" |
-	^"#!ccx" |
-	^"#!crd" |
-	^"#!cs" |
-	^"#!cst" |
-	^"#!d" |
-	^"#!dc" |
-	^"#!dg" |
-	^"#!ds" |
-	^"#!dt" |
-	^"#!dx" |
-	^"#!fw-es" |
-	^"#!fw-fr" |
-	^"#!fw-ge" |
-	^"#!fw-gr" |
-	^"#!fw-it" |
-	^"#!fw-la" |
-	^"#!fw-mi" |
-	^"#!j" |
-	^"#!j-av" |
-	^"#!jc" |
-	^"#!jc-jn" |
-	^"#!jc-vvg" |
-	^"#!jc-vvn" |
-	^"#!j-jn" |
-	^"#!j-u" |
-	^"#!j-vvnu" |
-	^"#!jp" |
-	^"#!js" |
-	^"#!js-jn" |
-	^"#!js-vvg" |
-	^"#!js-vvn" |
-	^"#!j-vvg" |
-	^"#!j-vvn" |
-	^"#!n1" |
-	^"#!n1-an" |
-	^"#!n1-j" |
-	^"#!n11vbz" |
-	^"#!n2" |
-	^"#!n2-acp" |
-	^"#!n2-an" |
-	^"#!n2-av" |
-	^"#!n2-dx" |
-	^"#!n2-j" |
-	^"#!n2-jn" |
-	^"#!n2-vdg" |
-	^"#!n2-vhg" |
-	^"#!n2-vvg" |
-	^"#!n2-vvn" |
-	^"#!ng1" |
-	^"#!ng1-an" |
-	^"#!ng1-j" |
-	^"#!ng1-jn" |
-	^"#!ng1-vvn" |
-	^"#!ng2" |
-	^"#!ng2-jn" |
-	^"#!n-jn" |
-	^"#!njp" |
-	^"#!njp2" |
-	^"#!njpg1" |
-	^"#!njpg2" |
-	^"#!np1" |
-	^"#!np2" |
-	^"#!npg1" |
-	^"#!npg2" |
-	^"#!np-n1" |
-	^"#!np-n2" |
-	^"#!np-ng1" |
-	^"#!np1-n" |
-	^"#!n-vdg" |
-	^"#!n-vhg" |
-	^"#!n-vvg" |
-	^"#!n-vvn" |
-	^"#!ord" |
-	^"#!p-acp" |
-	^"#!pc-acp" |
-	^"#!pi" |
-	^"#!pi2" |
-	^"#!pi2x" |
-	^"#!pig" |
-	^"#!pigx" |
-	^"#!pix" |
-	^"#!pn22" |
-	^"#!pn31" |
-	^"#!png11" |
-	^"#!png12" |
-	^"#!png21" |
-	^"#!png22" |
-	^"#!png31" |
-	^"#!png32" |
-	^"#!pno11" |
-	^"#!pno12" |
-	^"#!pno21" |
-	^"#!pno31" |
-	^"#!pno32" |
-	^"#!pns11" |
-	^"#!pns12" |
-	^"#!pns21" |
-	^"#!pns31" |
-	^"#!pns32" |
-	^"#!po11" |
-	^"#!po12" |
-	^"#!po21" |
-	^"#!po22" |
-	^"#!po31" |
-	^"#!po32" |
-	^"#!pp" |
-	^"#!pp-f" |
-	^"#!px11" |
-	^"#!px12" |
-	^"#!px21" |
-	^"#!px22" |
-	^"#!px31" |
-	^"#!px32" |
-	^"#!pxg21" |
-	^"#!q-crq" |
-	^"#!r-crq" |
-	^"#!ro-crq" |
-	^"#!qo-crq" |
-	^"#!rg-crq" |
-	^"#!n-crq" |
-	^"#!sy" |
-	^"#!uh" |
-	^"#!uh-av" |
-	^"#!uh-crq" |
-	^"#!uh-dx" |
-	^"#!uh-j" |
-	^"#!uh-jn" |
-	^"#!uh-np" |
-	^"#!uh-n" |
-	^"#!uh-v" |
-	^"#!uh-x" |
-	^"#!vb2" |
-	^"#!vb2-imp" |
-	^"#!vb2r" |
-	^"#!vb2x" |
-	^"#!vbb" |
-	^"#!vbbx" |
-	^"#!vbd" |
-	^"#!vbds" |
-	^"#!vbd2s" |
-	^"#!vbdr" |
-	^"#!vbd2r" |
-	^"#!vbd2" |
-	^"#!vbd2x" |
-	^"#!vbdp" |
-	^"#!vbdx" |
-	^"#!vbg" |
-	^"#!vbi" |
-	^"#!vbm" |
-	^"#!vbmx" |
-	^"#!vbn" |
-	^"#!vbp" |
-	^"#!vbr" |
-	^"#!vbz" |
-	^"#!vbzx" |
-	^"#!vd2" |
-	^"#!vd2-imp" |
-	^"#!vd2x" |
-	^"#!vdb" |
-	^"#!vdbx" |
-	^"#!vdd" |
-	^"#!vdd2" |
-	^"#!vdd2x" |
-	^"#!vddp" |
-	^"#!vddx" |
-	^"#!vdg" |
-	^"#!vdi" |
-	^"#!vdn" |
-	^"#!vdp" |
-	^"#!vdz" |
-	^"#!vdzx" |
-	^"#!vh2" |
-	^"#!vh2-imp" |
-	^"#!vh2x" |
-	^"#!vhb" |
-	^"#!vhbx" |
-	^"#!vhd" |
-	^"#!vhd2" |
-	^"#!vhdp" |
-	^"#!vhdx" |
-	^"#!vhg" |
-	^"#!vhi" |
-	^"#!vhn" |
-	^"#!vhp" |
-	^"#!vhz" |
-	^"#!vhzx" |
-	^"#!vm2" |
-	^"#!vm2x" |
-	^"#!vmb" |
-	^"#!vmb1" |
-	^"#!vmbx" |
-	^"#!vmd" |
-	^"#!vm2" |
-	^"#!vmd2" |
-	^"#!vmd2x" |
-	^"#!vmdp" |
-	^"#!vmdx" |
-	^"#!vmi" |
-	^"#!vmn" |
-	^"#!vmp" |
-	^"#!vv2" |
-	^"#!vv2-imp" |
-	^"#!vv2x" |
-	^"#!vvb" |
-	^"#!vvbx" |
-	^"#!vvd" |
-	^"#!vvd2" |
-	^"#!vvd2x" |
-	^"#!vvdp" |
-	^"#!vvdx" |
-	^"#!vvg" |
-	^"#!vvi" |
-	^"#!vvn" |
-	^"#!vvp" |
-	^"#!vvz" |
-	^"#!vvzx" |
-	^"#!xx" |
-	^"#!zz" }
 
 text = ${ ALPHA+ }
 
