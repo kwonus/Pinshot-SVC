@@ -10,7 +10,7 @@
 // fragments contain [>= 1] features
 // fragments are used to match terms (i.e. word tokens) across the corpus being searched; match logic should consider all features of the fragment/token when deeming it to be matched
 //
-// Version: 2.0.612
+// Version: 2.0.701
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { singleton | macro_vector | vector }
@@ -98,7 +98,8 @@ jesus = { ^"/Jesus/" }
 
 exit = { SINGLETON ~ ^"exit" }
 help = { SINGLETON ~ ^"help" ~ topic? }
-history = { SINGLETON ~ ^"history" }
+history = { SINGLETON ~ ^"review" ~ history_args? }
+
 //topic = { (HASHTAG | SINGLETON)? ~ text } // Vanilla-Quelle ?
 topic = ${ (HASHTAG | SINGLETON)? ~ (root_topics | group_topics) }
 expand = ${ SINGLETON ~ ^"expand" ~ (label | historic) }
@@ -201,33 +202,6 @@ FILESPEC = _{ ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9') | "/" | "\\" | "-" | "_" | 
 quoted_filespec = ${ QUOTE ~ FILESPEC ~ (FILESPEC | " ") + ~ QUOTE }
 unquoted_legal = { FILESPEC+ }
 filename = { quoted_filespec | unquoted_legal }
-
-DIGIT = _{ '0' .. '9' }
-HEX = _{ DIGIT | ('a' .. 'f') | ('A' .. 'F') }
-DIGITS = ${ DIGIT+ }
-DIGIT_ge5 = ${DIGIT ~ DIGIT ~ DIGIT ~ DIGIT ~ DIGIT+ }
-DIGIT_le2 = ${DIGIT ~ DIGIT? }
-DIGIT_le3 = ${DIGIT ~ DIGIT ~ DIGIT? }
-DIGIT_byte = ${ (("0" | "1" | "2") ~ DIGIT ~ DIGIT) | (DIGIT ~ DIGIT?) }
-HEX16 = ${ HEX ~ HEX ~ HEX ~ HEX }
-HEX32 = ${ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX }
-ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
-AND = _{ "&" }
-OR = _{ "|" }
-DELIMITER = _{ "+" | ";" }
-EQUALS = _{ "=" }
-OPEN_BRACE = _{ "[" }
-CLOSE_BRACE = _{ "]" }
-DOLLAR = _{ "$" }
-FILTER_OP = _{ "<" }
-QUOTE = _{ "\"" }
-COLON = _{ ":" }
-SETTING = _{ "::" }
-SPACE = _{ " " }
-VAR = _{ "%" }
-SINGLETON = _{ "@" }
-HASHTAG = _{ "@" }
-default = ${ ^"default" }
 
 // SEARCH
 TOPIC_FIND = @{ ^"FIND" } // 1
@@ -507,3 +481,38 @@ nupos = {
 text = ${ ALPHA+ }
 not = ${ "-:" }
 disable_lemma_match = { "!" }
+
+history_args = { (history_range ~ history_max?) | (history_max ~ history_range?) }
+history_since = { ^"since" ~ history_date }
+history_until = { ^"until" ~ history_date }
+history_range = { (history_since ~ history_until?) | (history_until ~ history_since?) }
+history_max = { DIGITS }
+history_date = ${ "20" ~ DIGIT ~ DIGIT ~ "/" ~ DIGIT ~ DIGIT ~ "/" ~ DIGIT ~ DIGIT }
+
+DIGIT = _{ '0' .. '9' }
+HEX = _{ DIGIT | ('a' .. 'f') | ('A' .. 'F') }
+DIGITS = ${ DIGIT+ }
+DIGIT_ge5 = ${DIGIT ~ DIGIT ~ DIGIT ~ DIGIT ~ DIGIT+ }
+DIGIT_le2 = ${DIGIT ~ DIGIT? }
+DIGIT_le3 = ${DIGIT ~ DIGIT ~ DIGIT? }
+DIGIT_byte = ${ (("0" | "1" | "2") ~ DIGIT ~ DIGIT) | (DIGIT ~ DIGIT?) }
+HEX16 = ${ HEX ~ HEX ~ HEX ~ HEX }
+HEX32 = ${ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX }
+ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
+AND = _{ "&" }
+OR = _{ "|" }
+DELIMITER = _{ "+" | ";" }
+EQUALS = _{ "=" }
+OPEN_BRACE = _{ "[" }
+CLOSE_BRACE = _{ "]" }
+DOLLAR = _{ "$" }
+FILTER_OP = _{ "<" }
+QUOTE = _{ "\"" }
+COLON = _{ ":" }
+SETTING = _{ "::" }
+SPACE = _{ " " }
+VAR = _{ "%" }
+SINGLETON = _{ "@" }
+HASHTAG = _{ "@" }
+default = ${ ^"default" }
+
