@@ -10,7 +10,7 @@
 // fragments contain [>= 1] features
 // fragments are used to match terms (i.e. word tokens) across the corpus being searched; match logic should consider all features of the fragment/token when deeming it to be matched
 //
-// Version: 2.0.701
+// Version: 2.0.3.701
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { singleton | macro_vector | vector }
@@ -148,9 +148,9 @@ DISPLAYS = _{ av | avx }  // very specific domain for the AVX driver/parser impl
 
 match_key = @{ ^"similarity" }
 MATCH_VAR = _{ match_key }
-match_var = { VAR ~ MATCH_VAR ~ SETTING ~ match_options }
-match_set = { VAR ~ MATCH_VAR ~ EQUALS ~ match_options }
-match_options =${ ((FUZZY | EXACT) ~ disable_lemma_match) | NONE }
+match_var = { VAR ~ MATCH_VAR ~ SETTING ~ match_option }
+match_set = { VAR ~ MATCH_VAR ~ EQUALS ~ match_option }
+match_option =${ ((FUZZY | EXACT) ~ disable_lemma_match) | NONE }
 EXACT = ${ ^"exact" ~ "100" }
 NONE = ${ ^"none" ~ "0" }
 THIRTY_THREE_PLUS = ${ ("3" ~ ('3' .. '9')) }
