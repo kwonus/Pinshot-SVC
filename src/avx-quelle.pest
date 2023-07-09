@@ -10,7 +10,7 @@
 // fragments contain [>= 1] features
 // fragments are used to match terms (i.e. word tokens) across the corpus being searched; match logic should consider all features of the fragment/token when deeming it to be matched
 //
-// Version: 2.0.3.701
+// Version: 2.0.3.708
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { singleton | macro_vector | vector }
@@ -100,11 +100,10 @@ exit = { SINGLETON ~ ^"exit" }
 help = { SINGLETON ~ ^"help" ~ topic? }
 history = { SINGLETON ~ ^"review" ~ history_args? }
 
-//topic = { (HASHTAG | SINGLETON)? ~ text } // Vanilla-Quelle ?
 topic = ${ (HASHTAG | SINGLETON)? ~ (root_topics | group_topics) }
-expand = ${ SINGLETON ~ ^"expand" ~ (label | historic) }
-delete = ${ SINGLETON ~ ^"delete" ~  label }
-absorb = ${ SINGLETON ~ ^"absorb" ~ (label | historic) }
+expand = { SINGLETON ~ ^"expand" ~ (label | historic) }
+delete = { SINGLETON ~ ^"delete" ~ (label | historic) }
+absorb = { SINGLETON ~ ^"absorb" ~ (label | historic) }
 version = { SINGLETON ~ ^"version" }
 reset = { SINGLETON ~ ^"reset" }
 initialize = { SINGLETON ~ ^"initialize" ~ ^"history" }
