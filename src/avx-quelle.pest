@@ -5,30 +5,34 @@
 // Short summary:
 // command has multiple clauses and optional export/scope/macro support
 // each clause is a standalone unit.  Search-Clauses have more granular units/syntax
-// search-clause contains [>= 1] segments
-// segments contain [>= 1] fragments
+// search-segment contains zero or one expression and/or any number of assignments
+// expression contains [>= 1] fragments
 // fragments contain [>= 1] features
 // fragments are used to match terms (i.e. word tokens) across the corpus being searched; match logic should consider all features of the fragment/token when deeming it to be matched
 //
-// Version: 2.0.3.708
 
 WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
-statement = { singleton | macro_vector | vector }
+statement = { avx_rev | singleton | implicits }
+implicits = { segment ~ additional_segment* }
+AVX_QUERY = _{ ^"_AVX_REV_" ~  "=?" }
+avx_rev = { AVX_QUERY ~ "2.4.111" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
 
-invocation = ${ invoke ~ control_suffix? }
-macro_vector = { IMPLICIT+ ~ apply }
-vector = { (IMPLICIT+) ~ implicit_singletons? }
-singleton = { exit | help | history | expand | delete | absorb | version | get | clear | reset | initialize }
+segment = { elements ~ macro_suffix? }
+elements = { element* ~ expression? ~ element* }
+macro_suffix = _{ apply_macro_full | apply_macro_part }
+expression = { search | invoke_full }
+element = { var_opt | invoke_partial | filter }
+singleton = { exit | help | history_reset | history | review | delete | absorb | get | set | clear | print }
 
-IMPLICIT = _{ IMPLICIT_OTHER | IMPLICIT_SEARCH }
-implicit_singletons = { (print ~ export?) | (export ~ print?) }
 export = { (output | append | overwrite) }
-IMPLICIT_SEARCH = _{ DELIMITER? ~ search }
-IMPLICIT_OTHER = _{ filter | setting | invocation }
-filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse | chapter)? }
+additional_segment = _{ SEARCH_EXPLICIT_BOUNDARY ~ segment }
+filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse_range | chapter_range | verse | chapter)? }
 
-item = { (text | pos | pn_pos12 | pos32 | nupos | greek | hebrew | loc | seg | lemma | wildcard | punc | decoration | delta ) }
+item = { (wildcard | text | pos | pn_pos12 | pos32 | nupos | greek | hebrew | loc | seg | lemma | punc | decoration | delta ) }
+fragment = { feature_option ~ (AND ~ feature_option)* }
+feature_option = { feature ~ (OR ~ feature)* }
 feature = { not? ~ item}
+
 delta = { ^"/delta/" }
 
 pn = { ^"/1p/" | ^"/2p/" | ^"/3p/" | "/indefinite/" }
@@ -96,91 +100,108 @@ punc = { punc_any | punc_question | punc_declare | punc_dash | punc_semi | punc_
 italics = { ^"/italics/" }
 jesus = { ^"/Jesus/" }
 
+print = { SINGLETON ~ ^"print" ~ export? }
 exit = { SINGLETON ~ ^"exit" }
 help = { SINGLETON ~ ^"help" ~ topic? }
-history = { SINGLETON ~ ^"review" ~ history_args? }
 
-topic = ${ (HASHTAG | SINGLETON)? ~ (root_topics | group_topics) }
-expand = { SINGLETON ~ ^"expand" ~ (label | historic) }
-delete = { SINGLETON ~ ^"delete" ~ (label | historic) }
-absorb = { SINGLETON ~ ^"absorb" ~ (label | historic) }
-version = { SINGLETON ~ ^"version" }
-reset = { SINGLETON ~ ^"reset" }
-initialize = { SINGLETON ~ ^"initialize" ~ ^"history" }
-get = { SINGLETON ~ ^"get" ~ var? }
-clear = { SINGLETON ~ ^"clear" ~ var? }
+topic = ${ SINGLETON? ~ (root_topics | group_topics) }
+review = { SINGLETON ~ ^"review" ~ (date_range? ~ label_parameter* ~ date_range?) }
+
+history_reset = { SINGLETON ~ ^"history" ~ "-reset" ~  range? }
+history = { SINGLETON ~ ^"history" ~ (date_range? ~ historic_parameter* ~ date_range?) }
+delete = { SINGLETON ~ ^"delete" ~ (label_any | historic_any) }
+absorb = { SINGLETON ~ ^"absorb" ~ (label_any | historic_any) }
+get = { SINGLETON ~ ^"get" ~ get_opt? }
+clear = { SINGLETON ~ ^"clear" ~ (var | ALL) }
 var = { span_key | lexicon_key | display_key | match_key | format_key }
+set = { span_set | lexicon_set | display_set | match_set | format_set }
 
 search = { ordered | unordered }   // quoted-searches are ordered // unquoted-searches are unordered
+unordered = { fragment+ } // Unordered expression
+ordered = { QUOTE ~ anchored ~ (anchored ~ unanchored)* ~ QUOTE } // Quoted/Ordered expression
+unanchored = { ellipsis ~ fragment }
+anchored = { fragment } // Segments have one or more unquoted (unordered) fragments <xor> have one or more quoted (ordered) fragments // Fragments are anded .... ALL MUST MATCH
 
-segment = { fragment ~ (AND ~ fragment)* } // Segments have >= 1 Unquoted (unordered) fragments <xor> have >= quoted (ordered) fragments
-fragment = { feature+ } // Fragments have >= 1 features, separated by AND( & ) // A single token in a document must match all features to be deemed a full-match // partial-matches are not designed into the grammar
-
-ordered = { QUOTE ~ (segment ~ (unanchored | segment)*) ~ QUOTE } // Quoted/Ordered segment
-unanchored = { ellipsis ~ segment }
-unordered = { segment+ }
-
-control_suffix = ${ ^"::current" }     // seems to be bug in pest crate iff this is named "settings_option" instead of "control_suffix"
 span_key = @{ ^"span" }
 SPAN_VAR = _{ span_key }
-span_var = { VAR ~ SPAN_VAR ~ SETTING ~ span_option }
-span_set = { VAR ~ SPAN_VAR ~ EQUALS ~ span_option }
-span_option = { DIGIT_le3 | span_verse | default }
-span_verse = { ^"verse" }
+span_set = { SET ~ SPAN_VAR ~ ASSIGN ~ span_option }
+span_var = { VAR ~ SPAN_VAR ~ ASSIGN ~ span_option }
+span_get = { VAR ~ SPAN_VAR }
+span_option = { DIGIT_le3 | span_verse }
+span_verse = ${ ^"verse" }
 
 lexicon_key = @{ ^"lexicon" }
 LEXICON_VAR = _{ lexicon_key }
-lexicon_var = { VAR ~ LEXICON_VAR ~ SETTING ~ lexicon_option }
-lexicon_set = { VAR ~ LEXICON_VAR ~ EQUALS ~ lexicon_option }
-lexicon_option = { LEXICONS | default }
-LEXICONS = _{ av | avx | dual }  // very specific domain for the AVX driver/parser implementation
+lexicon_set = { SET ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
+lexicon_var = { VAR ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
+lexicon_get = { VAR ~ LEXICON_VAR }
+lexicon_option = { LEXICONS }
+LEXICONS = _{ avx | av | dual }  // very specific domain for the AVX driver/parser implementation
 avx = { ^"modern" | "^avx" }
 av = { ^"kjv" | ^"av" }
 dual = { ^"dual" | ^"both" }
 
 display_key = @{ ^"display" }
 DISPLAY_VAR = _{ display_key }
-display_var = { VAR ~ DISPLAY_VAR ~ SETTING ~ display_option }
-display_set = { VAR ~ DISPLAY_VAR ~ EQUALS ~ display_option }
-display_option = { DISPLAYS | default }
+display_set = { SET ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
+display_var = { VAR ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
+display_get = { VAR ~ DISPLAY_VAR }
+display_option = { DISPLAYS }
 DISPLAYS = _{ av | avx }  // very specific domain for the AVX driver/parser implementation
 
 match_key = @{ ^"similarity" }
 MATCH_VAR = _{ match_key }
-match_var = { VAR ~ MATCH_VAR ~ SETTING ~ match_option }
-match_set = { VAR ~ MATCH_VAR ~ EQUALS ~ match_option }
-match_option =${ ((FUZZY | EXACT) ~ disable_lemma_match) | NONE }
-EXACT = ${ ^"exact" ~ "100" }
-NONE = ${ ^"none" ~ "0" }
-THIRTY_THREE_PLUS = ${ ("3" ~ ('3' .. '9')) }
-THIRTY_SOMETHING = _{ THIRTY_THREE_PLUS }
-FUZZY = ${ ( (('4' .. '9') ~ ('0' .. '9')) | ('1' .. '9') ) | THIRTY_SOMETHING } // legal thresholds are from 33 to 99 (100% is excluded because that would represent an exact-match
+match_set = { SET ~ MATCH_VAR ~ ASSIGN ~ match_option }
+match_var = { VAR ~ MATCH_VAR ~ ASSIGN ~ match_option }
+match_get = { VAR ~ MATCH_VAR }
+match_option =${ EXACT | ((PRECISE | FUZZY) ~ enable_lemma_match) }
+PRECISE = ${ ^"precise" ~ "100" }
+EXACT = ${ ^"exact" ~ "0" }
+THIRTY_SOMETHING = ${ "3" ~ ('3' .. '9') }
+FORTY_PLUS = ${ ('4' .. '9') ~ ('0' .. '9') }
 
+FUZZY = ${ THIRTY_SOMETHING | FORTY_PLUS } // legal thresholds are from 33 to 99 (100% is excluded because that would represent an exact-match
 
 format_key = @{ ^"format" }
 FORMAT_VAR = _{ format_key }
-format_var = { VAR ~ FORMAT_VAR ~ SETTING ~ format_option }
-format_set = { VAR ~ FORMAT_VAR ~ EQUALS ~ format_option }
-format_option = { html | markdown | textual | json | default }
+format_set = { SET ~ FORMAT_VAR ~ ASSIGN ~ format_option }
+format_var = { VAR ~ FORMAT_VAR ~ ASSIGN ~ format_option }
+format_get = { VAR ~ FORMAT_VAR }
+format_option = { html | markdown | textual | json | yaml }
 html = ${ ^"html" }
 markdown = ${ ^"markdown" | ^"md" }
-textual = ${ ^"text" }
+textual = ${ ^"text" | ^"utf8" }
 json = ${ ^"json" }
+yaml = ${ ^"yaml" }
 
-print = { OPEN_BRACE ~ (DIGITS)* ~ CLOSE_BRACE }
-cv = { chapter ~ COLON ~ verse }
-book = { (bookName | bookNum)}
-verse = { chapter ~ COLON ~ DIGIT_byte }
-chapter = { COLON ~ DIGIT_byte }
-bookName = { ALPHA+ | (onetwothree ~ ALPHA+) }
+book = { (bookName | bookNum) }
+verse = ${ chapter ~ COLON ~ DIGIT_byte }
+verse_range = ${ COLON ~ DIGIT_byte ~ HYPHEN ~ DIGIT_byte}
+chapter = ${ COLON ~ DIGIT_byte }
+chapter_range = ${ COLON ~ DIGIT_byte ~ HYPHEN ~ DIGIT_byte}
+bookName = ${ ALPHA+ | (onetwothree ~ ALPHA+) }
 onetwothree = { ('1' .. '3') }
 bookNum  = ${ ('1' .. '9') | (('1' .. '5') ~ DIGIT) ~ ( "6" ~ ('1' .. '6')) } // 1-66
-negate = { "-:" }
-setting = { span_var | span_set | lexicon_var | lexicon_set | display_var | display_set | match_var | match_set | format_var | format_set }
-apply = { "||" ~ label} // macro is a Rust keyword and cannot be used in here
-label = ${ ('a' .. 'z' | 'A' .. 'Z') ~ (('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | "-" | "_")+)? }
-historic = ${ ('1' .. '9') ~ ( '0' .. '9')* }
-invoke = ${ DOLLAR ~ (label | historic) }
+var_opt = { span_var | lexicon_var | display_var | match_var | format_var }
+get_opt = { span_get | lexicon_get | display_get | match_get | format_get | version_get | all_get }
+apply_macro_part = { "||" ~ label_part} // macro is a Rust keyword and cannot be used in here as  PEG variable
+apply_macro_full =  { "||" ~ label_full} // macro is a Rust keyword and cannot be used in here as PEG variable
+
+invoke_full = ${ label_full | historic_full }
+invoke_partial = ${ label_part | historic_part | defaults | currents }
+label_parameter = _{ label_any | wildcard }
+label_any = ${ (POUND | DOLLAR) ~ label }
+label_full = ${ DOLLAR ~ label }
+label_part = ${ POUND ~ label }
+historic_parameter = _{ historic_sequence | historic_any | range }
+historic_sequence = ${ id ~ HYPHEN ~ id }
+historic_any = ${ (POUND | DOLLAR) ~ id }
+historic_full = ${ DOLLAR ~ id }
+historic_part = ${ POUND ~ id }
+id = ${ ('1' .. '9') ~ ( '0' .. '9')* }
+defaults = ${ POUND ~ "0" }
+currents = ${ POUND ~ "*" }
+current = ${ DOLLAR ~ "*" }
 
 decoration = { italics | jesus }
 pos32 = ${ "#" ~ HEX32 }
@@ -189,17 +210,18 @@ greek = ${ DIGITS ~ ^":G" }
 hebrew = ${ DIGITS ~ ^":H" }
 
 lemma = { "\\" ~ text ~ "\\" }
-wildcard = ${ (text ~ "*" ~ text) | ("*" ~text) | (text ~ "*" ) }
-ELLIPSIS = @{ "..." }
+
+wildcard = ${ (term_begin | STAR) ~ term_contains* ~ term_end? }
+
 ellipsis = _{ "..." }
 
-append = { ">>" ~ filename }
+append = { ">>" ~  filename }
 output = { ">" ~ filename }
 overwrite = { "=>" ~ filename }
 
-FILESPEC = _{ ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9') | "/" | "\\" | "-" | "_" | ":" }
+FILESPEC = _{ ('a' .. 'z' | 'A' .. 'Z' | DIGIT) | "/" | "\\" | "-" | "_" | ":" }
 quoted_filespec = ${ QUOTE ~ FILESPEC ~ (FILESPEC | " ") + ~ QUOTE }
-unquoted_legal = { FILESPEC+ }
+unquoted_legal = ${ FILESPEC+ }
 filename = { quoted_filespec | unquoted_legal }
 
 // SEARCH
@@ -208,11 +230,12 @@ TOPIC_FILTER = @{ ^"FILTER" } // 2
 // CONTROL
 TOPIC_SET = @{ ^"SET" } // 3
 TOPIC_CLEAR = @{ ^"CLEAR" } // 4
+TOPIC_OPTION = @{ ^"OPTION" } // NEW
 TOPIC_GET = @{ ^"GET" } // 5
 TOPIC_RESET = @{ ^"RESET" } // 6
 TOPIC_ABSORB = @{ ^"ABSORB" } // 7
 //OUTPUT
-TOPIC_LIMIT = @{ ^"LIMIT" | ^"SHOW" } // 8 // show is deprecated verb for limit
+TOPIC_PRINT = @{ ^"PRINT" } // 8
 TOPIC_EXPORT = @{ ^"EXPORT" } // 9
 // SYSTEM
 TOPIC_HELP = @{ ^"HELP" } // 10
@@ -222,10 +245,9 @@ TOPIC_EXIT = @{ ^"EXIT" } // 12
 TOPIC_INVOKE = @{ ^"INVOKE" } // 13
 TOPIC_APPLY = @{ ^"APPLY" }   // 14
 TOPIC_DELETE = @{ ^"DELETE" } // 10
-TOPIC_EXPAND = @{ ^"EXPAND" } // 11
 TOPIC_REVIEW = @{ ^"REVIEW" } // 16
 TOPIC_INIT = @{ ^"INITIALIZE" } // 17 **
-root_topics = { TOPIC_FIND | TOPIC_FILTER | TOPIC_SET | TOPIC_CLEAR | TOPIC_GET | TOPIC_RESET | TOPIC_ABSORB | TOPIC_LIMIT | TOPIC_EXPORT | TOPIC_HELP | TOPIC_VERSION | TOPIC_EXIT | TOPIC_INVOKE | TOPIC_APPLY | TOPIC_DELETE | TOPIC_EXPAND | TOPIC_REVIEW | TOPIC_INIT }
+root_topics = { TOPIC_FIND | TOPIC_FILTER | TOPIC_SET | TOPIC_CLEAR | TOPIC_OPTION | TOPIC_GET | TOPIC_RESET | TOPIC_ABSORB | TOPIC_PRINT | TOPIC_EXPORT | TOPIC_HELP | TOPIC_VERSION | TOPIC_EXIT | TOPIC_INVOKE | TOPIC_APPLY | TOPIC_DELETE | TOPIC_REVIEW | TOPIC_INIT }
 
 GROUP_TOPIC_SEARCH = @{ ^"SEARCH" }
 GROUP_TOPIC_CONTROL = @{ ^"CONTROL" | ^"SETTINGS" }
@@ -477,16 +499,19 @@ nupos = {
 	^"#xx" |
 	^"#zz" }
 
-text = ${ ALPHA+ }
-not = ${ "-:" }
-disable_lemma_match = { "!" }
+enable_lemma_match = { "!" }
 
-history_args = { (history_range ~ history_max?) | (history_max ~ history_range?) }
-history_since = { ^"since" ~ history_date }
-history_until = { ^"until" ~ history_date }
-history_range = { (history_since ~ history_until?) | (history_until ~ history_since?) }
+range = _{ date_range | historic_sequence }
+date_range = _{ (date_gt ~ date_lt?) | (date_lt ~ date_gt?) }
+historic_range = _{ (id_gt ~ id_lt?) | (id_lt ~ id_gt?) }
 history_max = { DIGITS }
-history_date = ${ "20" ~ DIGIT ~ DIGIT ~ "/" ~ DIGIT ~ DIGIT ~ "/" ~ DIGIT ~ DIGIT }
+history_date = ${ "20" ~ DIGIT ~ DIGIT ~ "/" ~ DIGIT ~ DIGIT? ~ "/" ~ DIGIT ~ DIGIT? }
+date_gt = { ">" ~ history_date }
+date_lt = { "<" ~ history_date }
+id_gt = { ">" ~ id }
+id_lt = { "<" ~ id }
+reset_less_than = _{ id_lt | date_lt }
+reset_greater_than = _{ id_gt | date_gt }
 
 DIGIT = _{ '0' .. '9' }
 HEX = _{ DIGIT | ('a' .. 'f') | ('A' .. 'F') }
@@ -497,21 +522,36 @@ DIGIT_le3 = ${DIGIT ~ DIGIT ~ DIGIT? }
 DIGIT_byte = ${ (("0" | "1" | "2") ~ DIGIT ~ DIGIT) | (DIGIT ~ DIGIT?) }
 HEX16 = ${ HEX ~ HEX ~ HEX ~ HEX }
 HEX32 = ${ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX ~ HEX }
-ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
 AND = _{ "&" }
+
+label = ${ LABEL_CHAR* }
+LABEL_CHAR = _{ ( 'a' .. 'z' | 'A' .. 'Z' | DIGIT | "-" | "_") }
+
+ALL = _{ ^"all" }
+all_get = { VAR ~ ALL }
+VERSION = _{ ^"version" }
+version_get = { VAR ~ VERSION }
 OR = _{ "|" }
-DELIMITER = _{ "+" | ";" }
-EQUALS = _{ "=" }
+SEARCH_EXPLICIT_BOUNDARY = _{ "+" }
 OPEN_BRACE = _{ "[" }
 CLOSE_BRACE = _{ "]" }
 DOLLAR = _{ "$" }
+POUND = _{ "#" }
 FILTER_OP = _{ "<" }
 QUOTE = _{ "\"" }
 COLON = _{ ":" }
-SETTING = _{ "::" }
+ASSIGN = _{ "=" }
+STAR = _{ "*" }
 SPACE = _{ " " }
 VAR = _{ "%" }
+SET = _{ SINGLETON ~ set_command? ~ VAR }
+set_command = ${ ^"set" }
 SINGLETON = _{ "@" }
-HASHTAG = _{ "@" }
-default = ${ ^"default" }
+not = { "-" }
+
+term_contains = $ { text ~ STAR }
+term_end = ${ text }
+term_begin = ${ text ~ STAR }
+text = ${ ALPHA+ }
+ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
 
