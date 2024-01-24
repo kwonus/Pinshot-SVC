@@ -15,7 +15,7 @@ WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { avx_rev | singleton | implicits }
 implicits = { segment ~ additional_segment* }
 AVX_QUERY = _{ ^"_AVX_REV_" ~  "=?" }
-avx_rev = { AVX_QUERY ~ "2.4.111" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
+avx_rev = { AVX_QUERY ~ "2.4.123" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
 
 segment = { elements ~ macro_suffix? }
 elements = { element* ~ expression? ~ element* }
@@ -28,10 +28,13 @@ export = { (output | append | overwrite) }
 additional_segment = _{ SEARCH_EXPLICIT_BOUNDARY ~ segment }
 filter = { FILTER_OP ~ (bookName | bookNum) ~ (verse_range | chapter_range | verse | chapter)? }
 
-item = { (wildcard | text | pos | pn_pos12 | pos32 | nupos | greek | hebrew | loc | seg | lemma | punc | decoration | delta ) }
+item = { (wildcard | text | pos | pn_pos12 | pos32 | nupos | greek | hebrew | loc | seg | lemma | punc | decoration | delta | entity ) }
 fragment = { feature_option ~ (AND ~ feature_option)* }
 feature_option = { feature ~ (OR ~ feature)* }
 feature = { not? ~ item}
+
+entity = _{ "[" ~ entities ~ "]" }
+entities = @{ ^"person" | ^"man" | ^"woman" | ^"tribe" | ^"city" | ^"river" | ^"mountain" | ^"animal" | ^"gemstone" | ^"measurement" | ^"any" | ^"any_Hitchcock" }
 
 delta = { ^"/delta/" }
 
@@ -124,7 +127,7 @@ anchored = { fragment } // Segments have one or more unquoted (unordered) fragme
 
 span_key = @{ ^"span" }
 SPAN_VAR = _{ span_key }
-span_set = { SET ~ SPAN_VAR ~ ASSIGN ~ span_option }
+span_set = { (SET | SINGLETON) ~ SPAN_VAR ~ ASSIGN ~ span_option }
 span_var = { VAR ~ SPAN_VAR ~ ASSIGN ~ span_option }
 span_get = { VAR ~ SPAN_VAR }
 span_option = { DIGIT_le3 | span_verse }
@@ -132,29 +135,36 @@ span_verse = ${ ^"verse" }
 
 lexicon_key = @{ ^"lexicon" }
 LEXICON_VAR = _{ lexicon_key }
-lexicon_set = { SET ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
+lexicon_set = { (SET | SINGLETON) ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
 lexicon_var = { VAR ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
 lexicon_get = { VAR ~ LEXICON_VAR }
 lexicon_option = { LEXICONS }
-LEXICONS = _{ avx | av | dual }  // very specific domain for the AVX driver/parser implementation
-avx = { ^"modern" | "^avx" }
-av = { ^"kjv" | ^"av" }
-dual = { ^"dual" | ^"both" }
+LEXICONS = _{ AVX | AV | DUAL }  // very specific domain for the AVX driver/parser implementation
+AVX = ${ ^"modern" | "^avx" }
+AV = ${ ^"kjv" | ^"av" }
+DUAL = ${ ^"dual" | ^"both" }
 
 display_key = @{ ^"display" }
 DISPLAY_VAR = _{ display_key }
-display_set = { SET ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
+display_set = { (SET | SINGLETON) ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
 display_var = { VAR ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
 display_get = { VAR ~ DISPLAY_VAR }
 display_option = { DISPLAYS }
-DISPLAYS = _{ av | avx }  // very specific domain for the AVX driver/parser implementation
+DISPLAYS = _{ AV | AVX }  // very specific domain for the AVX driver/parser implementation
 
 match_key = @{ ^"similarity" }
 MATCH_VAR = _{ match_key }
-match_set = { SET ~ MATCH_VAR ~ ASSIGN ~ match_option }
+match_set = { (SET | SINGLETON) ~ MATCH_VAR ~ ASSIGN ~ match_option }
 match_var = { VAR ~ MATCH_VAR ~ ASSIGN ~ match_option }
 match_get = { VAR ~ MATCH_VAR }
-match_option =${ EXACT | ((PRECISE | FUZZY) ~ enable_lemma_match) }
+match_option = _{ similarity_global_opt | similarity_named_opts }
+similarity_named_opts = ${ (similarity_word ~ similarity_lemma?) | (similarity_lemma ~ similarity_word?) }
+similarity_global_opt = ${ similarity_opt }
+
+similarity_word = _{ WORD ~ COLON ~ similarity_opt }
+similarity_lemma = _{ LEMMA ~ COLON ~ similarity_opt }
+similarity_opt = _{ EXACT | PRECISE | FUZZY }
+
 PRECISE = ${ ^"precise" ~ "100" }
 EXACT = ${ ^"exact" ~ "0" }
 THIRTY_SOMETHING = ${ "3" ~ ('3' .. '9') }
@@ -499,7 +509,8 @@ nupos = {
 	^"#xx" |
 	^"#zz" }
 
-enable_lemma_match = { "!" }
+LEMMA = ${ ^"lemma" }
+WORD = ${ ^"word" }
 
 range = _{ date_range | historic_sequence }
 date_range = _{ (date_gt ~ date_lt?) | (date_lt ~ date_gt?) }
@@ -539,19 +550,18 @@ DOLLAR = _{ "$" }
 POUND = _{ "#" }
 FILTER_OP = _{ "<" }
 QUOTE = _{ "\"" }
-COLON = _{ ":" }
+COLON = @{ ":" }
 ASSIGN = _{ "=" }
 STAR = _{ "*" }
 SPACE = _{ " " }
 VAR = _{ "%" }
-SET = _{ SINGLETON ~ set_command? ~ VAR }
+SET = _{ SINGLETON ~ set_command ~ VAR }
 set_command = ${ ^"set" }
 SINGLETON = _{ "@" }
 not = { "-" }
 
-term_contains = $ { text ~ STAR }
+term_contains = ${ text ~ STAR }
 term_end = ${ text }
 term_begin = ${ text ~ STAR }
 text = ${ ALPHA+ }
 ALPHA = _{ 'a' .. 'z' | 'A' .. 'Z' }
-
