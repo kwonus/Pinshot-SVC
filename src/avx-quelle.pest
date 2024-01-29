@@ -121,9 +121,8 @@ set = { span_set | lexicon_set | display_set | match_set | format_set }
 
 search = { ordered | unordered }   // quoted-searches are ordered // unquoted-searches are unordered
 unordered = { fragment+ } // Unordered expression
-ordered = { QUOTE ~ anchored ~ (anchored ~ unanchored)* ~ QUOTE } // Quoted/Ordered expression
+ordered = { QUOTE ~ fragment ~ (unanchored | fragment)* ~ QUOTE } // Quoted/Ordered expression
 unanchored = { ellipsis ~ fragment }
-anchored = { fragment } // Segments have one or more unquoted (unordered) fragments <xor> have one or more quoted (ordered) fragments // Fragments are anded .... ALL MUST MATCH
 
 span_key = @{ ^"span" }
 SPAN_VAR = _{ span_key }
