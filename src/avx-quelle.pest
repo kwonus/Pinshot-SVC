@@ -1,5 +1,5 @@
 // AVX-Quelle Grammar - Expressed in PEG
-// Copyright (c) 2023, Kevin Wonus
+// Copyright (c) 2024, Kevin Wonus
 // MIT License
 
 // Short summary:
@@ -54,19 +54,23 @@ pro_neuter = { ^"/pn_neuter/" }
 pro_masculine = { ^"/pn_masculine/" | ^"/pn_male/" }
 pro_feminine = { ^"/pn_feminine/" | ^"/pn_fem/" }
 
+noun_genitive  = { ^"/noun_genitive/"   | ^"/p_gen/" }
+any_genitive   = { ^"/genitive/"      | ^"/any_gen/" }
+other_genitive =_{ noun_genitive      | any_genitive }
+
 pro_genitive   = { ^"/pn_genitive/"   | ^"/pn_gen/" }
 pro_nominative = { ^"/pn_nominative/" | ^"/pn_nom/" }
 pro_objective  = { ^"/pn_objective/"  | ^"/pn_obj/" }
 pro_reflexive  = { ^"/pn_reflexive/"  | ^"/pn_rfx/" }
 
-pro_all = { pro | pro_neuter| pro_masculine | pro_feminine | pro_genitive | pro_nominative | pro_objective | pro_reflexive }
+pro_all =_{ pro | pro_neuter | pro_masculine | pro_feminine | pro_genitive | pro_nominative | pro_objective | pro_reflexive }
 
 prep = { ^"/preposition/" | ^"/prep/" }
 inter = { ^"/interjection/" | ^"/inter/" }
 conj = { ^"/conjunction/" | ^"/conj/" }
 num = { ^"/numeric/" | ^"/num/" }
 
-more = { prep | inter | conj | num }
+more =_{ prep | inter | conj | num | other_genitive }
 
 wh = { ^"/wh/" }
 singular = { ^"/singular/" }
@@ -173,7 +177,7 @@ FUZZY = ${ THIRTY_SOMETHING | FORTY_PLUS } // legal thresholds are from 33 to 99
 
 format_key = @{ ^"format" }
 FORMAT_VAR = _{ format_key }
-format_set = { SET ~ FORMAT_VAR ~ ASSIGN ~ format_option }
+format_set = { (SET | SINGLETON) ~ FORMAT_VAR ~ ASSIGN ~ format_option }
 format_var = { VAR ~ FORMAT_VAR ~ ASSIGN ~ format_option }
 format_get = { VAR ~ FORMAT_VAR }
 format_option = { html | markdown | textual | json | yaml }
