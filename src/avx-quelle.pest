@@ -15,7 +15,7 @@ WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { avx_rev | singleton | implicits }
 implicits = { segment ~ additional_segment* }
 AVX_QUERY = _{ ^"_AVX_REV_" ~  "=?" }
-avx_rev = { AVX_QUERY ~ "2.4.123" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
+avx_rev = { AVX_QUERY ~ "2.4.211" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
 
 segment = { elements ~ macro_suffix? }
 elements = { element* ~ expression? ~ element* }
@@ -133,7 +133,7 @@ SPAN_VAR = _{ span_key }
 span_set = { (SET | SINGLETON) ~ SPAN_VAR ~ ASSIGN ~ span_option }
 span_var = { VAR ~ SPAN_VAR ~ ASSIGN ~ span_option }
 span_get = { VAR ~ SPAN_VAR }
-span_option = { DIGIT_le3 | span_verse }
+span_option = _{ DIGIT_le3 | span_verse }
 span_verse = ${ ^"verse" }
 
 lexicon_key = @{ ^"lexicon" }
@@ -141,7 +141,7 @@ LEXICON_VAR = _{ lexicon_key }
 lexicon_set = { (SET | SINGLETON) ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
 lexicon_var = { VAR ~ LEXICON_VAR ~ ASSIGN ~ lexicon_option }
 lexicon_get = { VAR ~ LEXICON_VAR }
-lexicon_option = { LEXICONS }
+lexicon_option = _{ LEXICONS }
 LEXICONS = _{ AVX | AV | DUAL }  // very specific domain for the AVX driver/parser implementation
 AVX = ${ ^"modern" | "^avx" }
 AV = ${ ^"kjv" | ^"av" }
@@ -152,7 +152,7 @@ DISPLAY_VAR = _{ display_key }
 display_set = { (SET | SINGLETON) ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
 display_var = { VAR ~ DISPLAY_VAR ~ ASSIGN ~ display_option }
 display_get = { VAR ~ DISPLAY_VAR }
-display_option = { DISPLAYS }
+display_option = _{ DISPLAYS }
 DISPLAYS = _{ AV | AVX }  // very specific domain for the AVX driver/parser implementation
 
 match_key = @{ ^"similarity" }
@@ -161,12 +161,12 @@ match_set = { (SET | SINGLETON) ~ MATCH_VAR ~ ASSIGN ~ match_option }
 match_var = { VAR ~ MATCH_VAR ~ ASSIGN ~ match_option }
 match_get = { VAR ~ MATCH_VAR }
 match_option = _{ similarity_global_opt | similarity_named_opts }
-similarity_named_opts = ${ (similarity_word ~ similarity_lemma?) | (similarity_lemma ~ similarity_word?) }
-similarity_global_opt = ${ similarity_opt }
+similarity_named_opts = _{ (similarity_word ~ similarity_lemma?) | (similarity_lemma ~ similarity_word?) }
+similarity_global_opt = _{ similarity_opt }
 
 similarity_word = _{ WORD ~ COLON ~ similarity_opt }
 similarity_lemma = _{ LEMMA ~ COLON ~ similarity_opt }
-similarity_opt = _{ EXACT | PRECISE | FUZZY }
+similarity_opt = ${ EXACT | PRECISE | FUZZY }
 
 PRECISE = ${ ^"precise" ~ "100" }
 EXACT = ${ ^"exact" ~ "0" }
@@ -180,7 +180,7 @@ FORMAT_VAR = _{ format_key }
 format_set = { (SET | SINGLETON) ~ FORMAT_VAR ~ ASSIGN ~ format_option }
 format_var = { VAR ~ FORMAT_VAR ~ ASSIGN ~ format_option }
 format_get = { VAR ~ FORMAT_VAR }
-format_option = { html | markdown | textual | json | yaml }
+format_option = _{ html | markdown | textual | json | yaml }
 html = ${ ^"html" }
 markdown = ${ ^"markdown" | ^"md" }
 textual = ${ ^"text" | ^"utf8" }
