@@ -15,7 +15,7 @@ WHITESPACE = _ { " " | "\t" | "\r" | "\n" }
 statement = { avx_rev | singleton | implicits }
 implicits = { segment ~ additional_segment* }
 AVX_QUERY = _{ ^"_AVX_REV_" ~  "=?" }
-avx_rev = { AVX_QUERY ~ "2.4.211" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
+avx_rev = { AVX_QUERY ~ "2.4.212" }   // grammar rule allows clients to assert expected version compatibility via extern C function call
 
 segment = { elements ~ macro_suffix? }
 elements = { element* ~ expression? ~ element* }
@@ -164,8 +164,8 @@ match_option = _{ similarity_global_opt | similarity_named_opts }
 similarity_named_opts = _{ (similarity_word ~ similarity_lemma?) | (similarity_lemma ~ similarity_word?) }
 similarity_global_opt = _{ similarity_opt }
 
-similarity_word = _{ WORD ~ COLON ~ similarity_opt }
-similarity_lemma = _{ LEMMA ~ COLON ~ similarity_opt }
+similarity_word = { WORD ~ COLON ~ similarity_opt }
+similarity_lemma = { LEMMA ~ COLON ~ similarity_opt }
 similarity_opt = ${ EXACT | PRECISE | FUZZY }
 
 PRECISE = ${ ^"precise" ~ "100" }
